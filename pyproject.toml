@@ -6,5 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "openai>=1.76.0",
+    "pytest>=8.3.5",
     "questionary>=2.1.0",
+    "term-image>=0.7.2",
 ]
