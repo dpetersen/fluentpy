@@ -1,5 +1,6 @@
 import questionary
 from openai import OpenAI
+from term_image.image import from_file
 import base64
 
 
@@ -40,7 +41,7 @@ def generate_image(*, client: OpenAI, word: str) -> str | None:
         model="dall-e-3",
         prompt=f"Create a clear, educational image representing the Spanish word '{word}'. The image should help language learners remember the meaning.",
         n=1,
-        size="512x512",
+        size="1024x1024",
         response_format="b64_json",
     )
 
@@ -49,6 +50,9 @@ def generate_image(*, client: OpenAI, word: str) -> str | None:
 
         with open(f"{word}.png", "wb") as f:
             f.write(image_data)
+
+        image = from_file(f"{word}.png")
+        image.draw()
 
         return f"{word}.png"
 
