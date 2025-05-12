@@ -1,7 +1,7 @@
 import base64
 import os
 import tempfile
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from openai import OpenAI
@@ -18,15 +18,16 @@ def openai_client():
     response = MagicMock()
     response.data = [MagicMock(b64_json=expected_encoded)]
 
-    client.images = MagicMock()
-    client.images.generate.return_value = response
+    generate = AsyncMock(return_value=response)
+    client.images = MagicMock(generate=generate)
 
     return client
 
 
-def test_generate_image(openai_client):
+@pytest.mark.asyncio
+async def test_generate_image(openai_client):
     """tests that OpenAI is called correctly and the passed-in path is written to"""
     with tempfile.TemporaryDirectory() as tmpdir:
         desired_path = os.path.join(tmpdir, "hola.png")
-        generate_image(client=openai_client, word="hola", path=desired_path)
+        await generate_image(client=openai_client, word="hola", path=desired_path)
         assert open(desired_path, "rb").read() == b"I am test data"

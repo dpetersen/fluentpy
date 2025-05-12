@@ -5,8 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "loguru>=0.7.3",
     "openai>=1.76.0",
     "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
     "questionary>=2.1.0",
     "term-image>=0.7.2",
 ]
+
+[tool.pytest.ini_options]
+# It complains about this if it's unset because this is going to be the default
+# in the future, according to the deprecation warning.
+asyncio_default_fixture_loop_scope = "function"

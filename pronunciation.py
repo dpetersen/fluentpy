@@ -1,4 +1,5 @@
-from openai import OpenAI
+from loguru import logger
+from openai import AsyncOpenAI
 
 MODEL = "gpt-4o"
 INSTRUCTIONS = "You are an expert in the Spanish language, teaching me to learn it."
@@ -9,10 +10,12 @@ Return only the IPA string, no additional text.
 """
 
 
-def get_pronunciation(*, client: OpenAI, word: str) -> str:
-    response = client.responses.create(
+async def get_pronunciation(*, client: AsyncOpenAI, word: str) -> str:
+    logger.debug("Getting pronunciation", word=word)
+    response = await client.responses.create(
         model=MODEL,
         instructions=INSTRUCTIONS,
         input=INPUT_TEMPLATE.format(word=word),
     )
+    logger.debug("Pronunciation received", word=word)
     return response.output_text

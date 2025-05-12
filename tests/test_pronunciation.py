@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from openai import OpenAI
 from pronunciation import get_pronunciation
@@ -7,18 +7,19 @@ from pronunciation import get_pronunciation
 
 @pytest.fixture
 def openai_client():
-    client = MagicMock(spec=OpenAI)
     response = MagicMock(output_text="ˈo.la")
+    client = MagicMock(spec=OpenAI)
 
-    client.responses = MagicMock()
-    client.responses.create.return_value = response
+    create = AsyncMock(return_value=response)
+    client.responses = MagicMock(create=create)
 
     return client
 
 
-def test_get_pronunciation(openai_client):
+@pytest.mark.asyncio
+async def test_get_pronunciation(openai_client):
     """tests OpenAI is called and its results returned"""
-    result = get_pronunciation(client=openai_client, word="hola")
+    result = await get_pronunciation(client=openai_client, word="hola")
     assert result == "ˈo.la"
 
     openai_client.responses.create.assert_called_once()
