@@ -14,20 +14,23 @@ async def process_word(word: str, should_generate_image: bool):
 
     pronunciation_task = get_pronunciation(client=client, word=word)
     image_task = None
+    image_path = f"./{word}.png"
 
     if should_generate_image:
         logger.info("Generating image", word=word)
         try:
-            # FIXME: correct the path
-            image_path = f"./{word}.png"
             image_task = generate_image(client=client, word=word, path=image_path)
         except Exception as e:
             logger.error("Error generating image", word=word, error=str(e))
 
-    # FIXME: this errors, because None can't stand in for a task like this
-    pronunciation, image_path = await asyncio.gather(pronunciation_task, image_task)
+    tasks = [pronunciation_task]
+    if image_task is not None:
+        tasks.append(image_task)
+
+    results = await asyncio.gather(*tasks)
+    pronunciation = results[0]
     logger.info("Found IPA pronunciation", word=word, pronunciation=pronunciation)
-    if image_path:
+    if should_generate_image:
         logger.info("Image saved", path=image_path)
         view_image(path=image_path)
 
