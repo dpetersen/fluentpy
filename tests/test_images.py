@@ -29,5 +29,8 @@ async def test_generate_image(openai_client):
     """tests that OpenAI is called correctly and the passed-in path is written to"""
     with tempfile.TemporaryDirectory() as tmpdir:
         desired_path = os.path.join(tmpdir, "hola.png")
-        await generate_image(client=openai_client, word="hola", path=desired_path)
+        result_path = await generate_image(
+            client=openai_client, word="hola", path=desired_path
+        )
+        assert result_path == desired_path
         assert open(desired_path, "rb").read() == b"I am test data"

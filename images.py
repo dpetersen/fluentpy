@@ -5,7 +5,7 @@ from openai import AsyncOpenAI
 from term_image.image import from_file
 
 
-async def generate_image(*, client: AsyncOpenAI, word: str, path: str):
+async def generate_image(*, client: AsyncOpenAI, word: str, path: str) -> str:
     logger.debug("Generating image", word=word)
     response = await client.images.generate(
         model="dall-e-3",
@@ -22,6 +22,7 @@ async def generate_image(*, client: AsyncOpenAI, word: str, path: str):
         logger.info("Writing file", word=word, path=path)
         with open(file=path, mode="wb") as f:
             f.write(image_data)
+        return path
     else:
         raise RuntimeError("No image data received from API")
 
