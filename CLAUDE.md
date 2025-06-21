@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FluentPy is a Spanish language learning tool that helps users with pronunciation and visual memory. It uses OpenAI's APIs to generate IPA pronunciations and educational images for Spanish words, displaying them directly in the terminal.
+FluentPy is a Spanish language learning tool that helps users with pronunciation and visual memory. It uses OpenAI's APIs to generate IPA pronunciations and educational images for Spanish words, and ElevenLabs' API to generate native-speaker audio pronunciations using Mexican Spanish voices. All content is displayed directly in the terminal.
 
 ## Development Commands
 
 ### Running the Application
 ```bash
-# Requires OPENAI_API_KEY environment variable
+# Requires OPENAI_API_KEY and ELEVENLABS_API_KEY environment variables
 uv run python main.py
 ```
 
@@ -58,6 +58,11 @@ The codebase follows a modular architecture with clear separation of concerns:
    - `generate_image()`: Creates educational images using DALL-E 3
    - `view_image()`: Displays images in terminal using term-image
    - Handles base64 encoding and file operations
+
+4. **`audio.py`**: Audio generation for pronunciation
+   - `generate_audio()`: Creates audio pronunciations using ElevenLabs API
+   - `get_mexican_spanish_voices()`: Filters and selects Mexican Spanish voices
+   - Saves audio as MP3 files with high-quality output format
 
 ### Key Patterns
 
