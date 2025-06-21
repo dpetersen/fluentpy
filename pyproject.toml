@@ -13,7 +13,14 @@ dependencies = [
     "term-image>=0.7.2",
 ]
 
+[dependency-groups]
+dev = [
+    "ruff>=0.8.0",
+    "pyright>=1.1.390",
+]
+
 [tool.pytest.ini_options]
 # It complains about this if it's unset because this is going to be the default
 # in the future, according to the deprecation warning.
 asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
