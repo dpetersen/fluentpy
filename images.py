@@ -4,12 +4,22 @@ from loguru import logger
 from openai import AsyncOpenAI
 from term_image.image import from_file
 
+PROMPT_TEMPLATE = """
+I am making memorable Anki flashcards for Spanish vocabulary. I am using the mneumonic imagery that male words are on fire and female words are frozen, or cold.
+
+It is absolutely critical that the word I give you, or any similar words, SHOULD NOT appear in the image. I am looking for imagery, not traditional flash cards. The style of the image can be whatever style you think best fits the word.
+
+I'm learning Latin American Spanish, Mexican specifically, so keep that in mind when trying to translate the terms to images.
+
+The word is: {word}
+"""
+
 
 async def generate_image(*, client: AsyncOpenAI, word: str, path: str) -> str:
     logger.debug("Generating image", word=word)
     response = await client.images.generate(
         model="dall-e-3",
-        prompt=f"Create a clear, educational image representing the Spanish word '{word}'. The image should help language learners remember the meaning.",
+        prompt=PROMPT_TEMPLATE.format(word=word),
         n=1,
         size="1024x1024",
         response_format="b64_json",
