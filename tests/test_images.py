@@ -34,3 +34,7 @@ async def test_generate_image(openai_client):
         )
         assert result_path == desired_path
         assert open(desired_path, "rb").read() == b"I am test data"
+        
+        openai_client.images.generate.assert_called_once()
+        call_args = openai_client.images.generate.call_args
+        assert call_args.kwargs["model"] == "gpt-image-1"

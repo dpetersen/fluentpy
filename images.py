@@ -18,11 +18,11 @@ The word is: {word}
 async def generate_image(*, client: AsyncOpenAI, word: str, path: str) -> str:
     logger.debug("Generating image", word=word)
     response = await client.images.generate(
-        model="dall-e-3",
+        model="gpt-image-1",
         prompt=PROMPT_TEMPLATE.format(word=word),
         n=1,
         size="1024x1024",
-        response_format="b64_json",
+        quality="medium",
     )
     logger.debug("Received image response", word=word)
 
