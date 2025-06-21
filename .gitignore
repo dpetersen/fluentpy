@@ -12,3 +12,7 @@ wheels/
 # Ignore generated images I keep accidentally writing into this repo while I
 # work on the feature
 *.png
+
+# This is probably safe for me to check in for a personal repo, but I'll ignore
+# it for now.
+.claude/settings.local.json
