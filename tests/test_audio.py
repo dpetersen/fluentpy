@@ -74,7 +74,8 @@ class TestGenerateAudio:
                 elevenlabs_client.text_to_speech.convert.assert_called_once_with(
                     text="hola",
                     voice_id="CaJslL1xziwefCeTNzHv",
-                    model_id="eleven_multilingual_v2",
+                    model_id="eleven_flash_v2_5",
+                    language_code="es",
                     output_format="mp3_44100_128",
                 )
 

@@ -28,13 +28,16 @@ async def generate_audio(
         logger.info(
             "Using hardcoded voice for audio generation",
             voice_id=voice_id,
+            model="eleven_flash_v2_5",
+            language_code="es",
         )
 
-        # Generate audio using multilingual model
+        # Generate audio using Flash v2.5 model with Spanish
         audio_generator = client.text_to_speech.convert(
             text=word,
             voice_id=voice_id,
-            model_id="eleven_multilingual_v2",
+            model_id="eleven_flash_v2_5",
+            language_code="es",
             output_format="mp3_44100_128",
         )
 
