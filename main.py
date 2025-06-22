@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 import questionary
 from loguru import logger
@@ -6,6 +7,14 @@ from openai import AsyncOpenAI
 
 from images import generate_image, view_image
 from pronunciation import get_pronunciation
+
+# Configure loguru to show extra fields
+logger.remove()  # Remove default handler
+logger.add(
+    sys.stderr,
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level> <dim>{extra}</dim>",
+    level="DEBUG"
+)
 
 
 async def process_word(word: str, should_generate_image: bool):
