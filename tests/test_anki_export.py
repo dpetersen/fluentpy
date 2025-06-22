@@ -235,6 +235,7 @@ class TestGenerateCsv:
             content = output_path.read_text()
             assert "#notetype:2. Picture Words" in content
             assert "#deck:FluentPy Test" in content
+            assert "#fields:Word\tPicture\t" in content  # Verify proper field headers
             assert "perro" in content
 
     def test_fails_for_incomplete_session(self):

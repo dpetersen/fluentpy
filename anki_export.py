@@ -127,8 +127,8 @@ def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> boo
             csvfile.write("#html:true\n")
             csvfile.write("#guid column:6\n")
             
-            # Write field names header
-            csvfile.write("\t".join(config.FIELD_NAMES) + "\n")
+            # Write field names header (with #fields: prefix so Anki knows it's headers)
+            csvfile.write("#fields:" + "\t".join(config.FIELD_NAMES) + "\n")
             
             # Write card data
             writer = csv.writer(csvfile, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
