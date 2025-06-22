@@ -7,7 +7,9 @@ from term_image.image import from_file
 from word_analysis import WordAnalysis
 
 
-def _create_prompt(word: str, analysis: WordAnalysis, extra_prompt: str | None = None) -> str:
+def _create_prompt(
+    word: str, analysis: WordAnalysis, extra_prompt: str | None = None
+) -> str:
     base_prompt = """
     I am making memorable Anki flashcards for Spanish vocabulary. It is absolutely 
     critical that the word I give you, or any similar words, SHOULD NOT appear in 
@@ -25,7 +27,7 @@ def _create_prompt(word: str, analysis: WordAnalysis, extra_prompt: str | None =
         case "verb":
             specific_prompt = """
             Since this is a verb, make sure there is clear action happening in the image. 
-            The action should be prominent and obvious to help reinforce the verb meaning.
+            The action should be prominent and obvious to help reinforce the verb meaning. It can be presented in a way that's almost overly obvious, like you'd see in a safety card, warning sign, or a comic book.
             """
         case "adjective":
             specific_prompt = """
@@ -38,15 +40,11 @@ def _create_prompt(word: str, analysis: WordAnalysis, extra_prompt: str | None =
             match gender:
                 case "masculine":
                     specific_prompt = """
-                    I use the mnemonic that masculine words are intensely hot and fiery. 
-                    Incorporate blazing flames, intense heat, burning, or fiery imagery into the scene.
-                    Make it dramatically hot and fiery.
+                    I use the mnemonic that masculine words are on fire. I want the object to be in some way on fire, surrounded by fire, smoking heavily, or glowing with heat. Somehow, even if it's unusual, that this object is masculine. It can be dramatic, but in a surrealist way I don't want the flames to affect the situation the object is placed.
                     """
                 case "feminine":
                     specific_prompt = """
-                    I use the mnemonic that feminine words are intensely cold and freezing. 
-                    Incorporate freezing ice, bitter cold, frost, blizzards, or arctic imagery into the scene.
-                    Make it dramatically cold and freezing.
+                    I use the mnemonic that feminine words are intensely cold and freezing. In a surrealist manner, while the object should be cold, or have icicles on it in a way that makes it obvious it's femenine, don't have that affect the surroundings of the image where this object is placed.
                     """
                 case _:
                     specific_prompt = """
@@ -57,16 +55,23 @@ def _create_prompt(word: str, analysis: WordAnalysis, extra_prompt: str | None =
             Create a clear, memorable image that represents this concept.
             """
 
-    final_prompt = f"{base_prompt.strip()}\n\n{specific_prompt.strip()}\n\nThe word is: {word}"
-    
+    final_prompt = (
+        f"{base_prompt.strip()}\n\n{specific_prompt.strip()}\n\nThe word is: {word}"
+    )
+
     if extra_prompt:
         final_prompt += f"\n\nAdditional context: {extra_prompt}"
-    
+
     return final_prompt
 
 
 async def generate_image(
-    *, client: AsyncOpenAI, word: str, analysis: WordAnalysis, path: str, extra_prompt: str | None = None
+    *,
+    client: AsyncOpenAI,
+    word: str,
+    analysis: WordAnalysis,
+    path: str,
+    extra_prompt: str | None = None,
 ) -> str:
     logger.debug("Generating image", word=word)
     prompt = _create_prompt(word, analysis, extra_prompt)

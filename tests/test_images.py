@@ -98,11 +98,11 @@ class TestCreatePrompt:
         assert any(
             term in prompt.lower()
             for term in [
-                "blazing flames",
-                "intense heat",
-                "burning",
-                "fiery",
-                "dramatically hot",
+                "on fire",
+                "surrounded by fire", 
+                "smoking heavily",
+                "glowing with heat",
+                "flames",
             ]
         )
 
@@ -121,13 +121,12 @@ class TestCreatePrompt:
         assert any(
             term in prompt.lower()
             for term in [
-                "freezing ice",
-                "bitter cold",
-                "frost",
-                "blizzards",
-                "arctic",
-                "dramatically cold",
+                "intensely cold",
                 "freezing",
+                "icicles",
+                "cold",
+                "femenine", 
+                "surrealist",
             ]
         )
 
