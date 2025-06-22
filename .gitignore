@@ -14,6 +14,7 @@ wheels/
 *.png
 *.jpg
 *.mp3
+output
 
 # This is probably safe for me to check in for a personal repo, but I'll ignore
 # it for now.
