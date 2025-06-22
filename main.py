@@ -8,14 +8,14 @@ from openai import AsyncOpenAI
 
 from audio import generate_audio
 from images import generate_image, view_image
-from pronunciation import get_pronunciation
+from word_analysis import analyze_word
 
 # Configure loguru to show extra fields
 logger.remove()  # Remove default handler
 logger.add(
     sys.stderr,
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level> <dim>{extra}</dim>",
-    level="DEBUG"
+    level="DEBUG",
 )
 
 
@@ -26,7 +26,7 @@ async def process_word(
     openai_client = AsyncOpenAI()
     elevenlabs_client = AsyncElevenLabs()
 
-    pronunciation_task = get_pronunciation(client=openai_client, word=word)
+    analysis_task = analyze_word(client=openai_client, word=word)
     image_task = None
     audio_task = None
 
@@ -50,15 +50,22 @@ async def process_word(
         except Exception as e:
             logger.error("Error generating audio", word=word, error=str(e))
 
-    tasks: list = [pronunciation_task]
+    tasks: list = [analysis_task]
     if image_task is not None:
         tasks.append(image_task)
     if audio_task is not None:
         tasks.append(audio_task)
 
     results = await asyncio.gather(*tasks)
-    pronunciation = results[0]
-    logger.info("Found IPA pronunciation", word=word, pronunciation=pronunciation)
+    analysis = results[0]
+    logger.info(
+        "Word analysis complete",
+        word=word,
+        ipa=analysis["ipa"],
+        part_of_speech=analysis["part_of_speech"],
+        gender=analysis["gender"],
+        verb_type=analysis["verb_type"],
+    )
 
     result_index = 1
     if should_generate_image and len(results) > result_index:
