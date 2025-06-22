@@ -22,8 +22,8 @@ def elevenlabs_client():
     mock_response.voices = [mock_voice]
 
     # Mock API calls
-    search = AsyncMock(return_value=mock_response)
-    client.voices = MagicMock(search=search)
+    get_shared = AsyncMock(return_value=mock_response)
+    client.voices = MagicMock(get_shared=get_shared)
 
     # Mock audio data as async iterator  
     async def mock_audio_generator():
@@ -44,9 +44,9 @@ class TestGetMexicanSpanishVoices:
 
         assert len(voices) == 1
         assert voices[0].name == "Maria (Mexican Spanish)"
-        # Should be called with the first strategy
-        elevenlabs_client.voices.search.assert_called_with(
-            search="mexican spanish"
+        # Should be called with shared voices search
+        elevenlabs_client.voices.get_shared.assert_called_with(
+            search="spanish"
         )
 
     @pytest.mark.asyncio
@@ -62,24 +62,24 @@ class TestGetMexicanSpanishVoices:
         mock_response_found = MagicMock()
         mock_response_found.voices = [general_voice]
 
-        # Mexican Spanish search fails, general search succeeds
-        elevenlabs_client.voices.search.side_effect = [
-            mock_response_empty,  # mexican spanish search fails
-            mock_response_found,  # general search succeeds
+        # Spanish shared search fails, general shared search succeeds
+        elevenlabs_client.voices.get_shared.side_effect = [
+            mock_response_empty,  # spanish shared search fails
+            mock_response_found,  # general shared search succeeds
         ]
 
         voices = await get_mexican_spanish_voices(elevenlabs_client)
 
         assert len(voices) == 1
         assert voices[0].name == "General Voice"
-        assert elevenlabs_client.voices.search.call_count == 2
+        assert elevenlabs_client.voices.get_shared.call_count == 2
 
     @pytest.mark.asyncio
     async def test_no_voices_found(self, elevenlabs_client):
         """Test when no voices are found with any search strategy."""
         mock_response = MagicMock()
         mock_response.voices = []
-        elevenlabs_client.voices.search.return_value = mock_response
+        elevenlabs_client.voices.get_shared.return_value = mock_response
 
         voices = await get_mexican_spanish_voices(elevenlabs_client)
 
@@ -98,10 +98,10 @@ class TestGetMexicanSpanishVoices:
         mock_response_community = MagicMock()
         mock_response_community.voices = [community_voice] * 15  # 15 voices to test limit
         
-        # Mexican Spanish search fails, then general fallback succeeds
-        elevenlabs_client.voices.search.side_effect = [
-            mock_response_empty,  # mexican spanish search fails
-            mock_response_community,  # general fallback succeeds
+        # Spanish shared search fails, then general shared fallback succeeds
+        elevenlabs_client.voices.get_shared.side_effect = [
+            mock_response_empty,  # spanish shared search fails
+            mock_response_community,  # general shared fallback succeeds
         ]
         
         voices = await get_mexican_spanish_voices(elevenlabs_client)
@@ -112,7 +112,7 @@ class TestGetMexicanSpanishVoices:
     @pytest.mark.asyncio
     async def test_api_error_handling(self, elevenlabs_client):
         """Test error handling when API calls fail."""
-        elevenlabs_client.voices.search.side_effect = Exception("API Error")
+        elevenlabs_client.voices.get_shared.side_effect = Exception("API Error")
 
         voices = await get_mexican_spanish_voices(elevenlabs_client)
 
@@ -169,3 +169,33 @@ class TestGenerateAudio:
             result = await generate_audio(elevenlabs_client, "hola", "test.mp3")
 
             assert result is None
+    
+    @pytest.mark.asyncio
+    async def test_audio_generation_tier_retry(self, elevenlabs_client):
+        """Test retry logic when voice requires higher tier."""
+        with patch("audio.get_mexican_spanish_voices") as mock_get_voices:
+            voice1 = MagicMock()
+            voice1.name = "Premium Voice"
+            voice1.voice_id = "premium-id"
+            
+            voice2 = MagicMock()
+            voice2.name = "Free Voice"
+            voice2.voice_id = "free-id"
+            
+            mock_get_voices.return_value = [voice1, voice2]
+            
+            # First call fails with tier error, second succeeds
+            async def mock_audio_generator():
+                for chunk in [b"audio", b"data"]:
+                    yield chunk
+                    
+            elevenlabs_client.text_to_speech.convert.side_effect = [
+                Exception("status: 'free_users_not_allowed'"),
+                mock_audio_generator()
+            ]
+            
+            with patch("builtins.open", mock_open()):
+                result = await generate_audio(elevenlabs_client, "hola", "test.mp3")
+            
+            assert result == "test.mp3"
+            assert elevenlabs_client.text_to_speech.convert.call_count == 2
