@@ -99,7 +99,7 @@ class TestCreatePrompt:
             term in prompt.lower()
             for term in [
                 "on fire",
-                "surrounded by fire", 
+                "surrounded by fire",
                 "smoking heavily",
                 "glowing with heat",
                 "flames",
@@ -125,7 +125,7 @@ class TestCreatePrompt:
                 "freezing",
                 "icicles",
                 "cold",
-                "femenine", 
+                "femenine",
                 "surrealist",
             ]
         )
@@ -202,34 +202,32 @@ class TestCreatePrompt:
             "gender": "feminine",
             "verb_type": None,
         }
-        
+
         extra_prompt = "make it colorful with bright flowers"
         prompt = _create_prompt("casa", analysis, extra_prompt)
-        
+
         assert "Additional context: make it colorful with bright flowers" in prompt
         # Should still include base instructions
         assert "anki flashcards" in prompt.lower()
         # Should still include gender-specific instructions for feminine noun
         assert any(
-            term in prompt.lower()
-            for term in ["freezing", "cold", "ice", "arctic"]
+            term in prompt.lower() for term in ["freezing", "cold", "ice", "arctic"]
         )
 
     def test_no_extra_prompt_works_normally(self):
         """Test that prompt works normally when no extra prompt provided"""
         analysis: WordAnalysis = {
-            "ipa": "ˈka.sa", 
+            "ipa": "ˈka.sa",
             "part_of_speech": "noun",
             "gender": "feminine",
             "verb_type": None,
         }
-        
+
         prompt = _create_prompt("casa", analysis)
-        
+
         assert "Additional context:" not in prompt
         # Should still include base and gender-specific instructions
         assert "anki flashcards" in prompt.lower()
         assert any(
-            term in prompt.lower()
-            for term in ["freezing", "cold", "ice", "arctic"]
+            term in prompt.lower() for term in ["freezing", "cold", "ice", "arctic"]
         )

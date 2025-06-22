@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 import sys
 
 import questionary
@@ -19,24 +20,48 @@ logger.add(
 )
 
 
+def check_mpv_availability() -> bool:
+    """Check if mpv is available in PATH."""
+    try:
+        result = subprocess.run(
+            ["mpv", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+        return False
+
+
 async def main():
     """Complete FluentPy workflow: input → generation → review → export."""
-    logger.info("Starting FluentPy session")
+    # Check for required dependencies first
+    if not check_mpv_availability():
+        print("❌ Error: mpv is required for audio playback but not found.")
+        print("Please install mpv:")
+        print("  • macOS: brew install mpv")
+        print("  • Ubuntu/Debian: sudo apt install mpv")
+        print("  • Arch Linux: sudo pacman -S mpv")
+        print("  • Or visit: https://mpv.io/installation/")
+        sys.exit(1)
     
+    logger.info("Starting FluentPy session")
+
     # Step 1: Collect words from user
     print("🇪🇸 FluentPy - Spanish Flashcard Generator")
     print("=" * 50)
     print("Enter Spanish words to create Anki flashcards with images and audio.")
     print()
-    
+
     word_inputs = await get_word_inputs()
-    
+
     if not word_inputs:
         print("No words entered. Exiting.")
         return
-    
+
     print(f"\n📝 Processing {len(word_inputs)} words...")
-    
+
     # Step 2: Create session and analyze words
     try:
         session = await create_session(word_inputs)
@@ -45,7 +70,7 @@ async def main():
         logger.error("Failed to create session", error=str(e))
         print(f"❌ Error analyzing words: {e}")
         return
-    
+
     # Step 3: Generate media for all cards
     print("\n🎨 Generating images and audio...")
     try:
@@ -55,12 +80,12 @@ async def main():
         logger.error("Failed to generate media", error=str(e))
         print(f"❌ Error generating media: {e}")
         return
-    
+
     # Step 4: Review and approve cards
     print("\n👀 Review your flashcards")
     print("For each word, you can approve the generated media or regenerate it.")
     print()
-    
+
     try:
         await review_session(session)
         logger.info("Review session completed")
@@ -68,31 +93,31 @@ async def main():
         logger.error("Failed during review", error=str(e))
         print(f"❌ Error during review: {e}")
         return
-    
+
     # Step 5: Show session summary
     show_session_summary(session)
-    
+
     # Step 6: Export to Anki
     export_choice = await questionary.confirm(
         "Would you like to export to Anki now?", default=True
     ).ask_async()
-    
+
     if export_choice:
         print("\n📤 Exporting to Anki...")
-        
+
         # Optional: Ask for custom deck name
         use_custom_deck = await questionary.confirm(
             "Export to default deck 'FluentPy Test'?", default=True
         ).ask_async()
-        
+
         deck_name = None
         if not use_custom_deck:
             deck_name = await questionary.text(
                 "Enter deck name:", default="FluentPy Test"
             ).ask_async()
-        
+
         config = AnkiConfig(deck_name=deck_name)
-        
+
         try:
             success = export_to_anki(session, config)
             if success:
@@ -105,7 +130,7 @@ async def main():
             print(f"❌ Export error: {e}")
     else:
         print("\n💾 Session saved. You can export later.")
-    
+
     print("\n🎉 FluentPy session complete!")
 
 

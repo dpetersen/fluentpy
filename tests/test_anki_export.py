@@ -24,9 +24,9 @@ class TestCreateField3Content:
             ipa="ˈka.sa",
             part_of_speech="noun",
             gender="feminine",
-            personal_context="Mi hogar de la infancia"
+            personal_context="Mi hogar de la infancia",
         )
-        
+
         result = create_field_3_content(card, config)
         assert result == "Sustantivo femenino. Mi hogar de la infancia."
 
@@ -38,21 +38,17 @@ class TestCreateField3Content:
             ipa="ko.ˈrer",
             part_of_speech="verb",
             verb_type="intransitive",
-            personal_context="Corro cada mañana"
+            personal_context="Corro cada mañana",
         )
-        
+
         result = create_field_3_content(card, config)
         assert result == "Verbo intransitivo. Corro cada mañana."
 
     def test_adjective_without_context(self):
         """Test field 3 content for adjective without personal context."""
         config = AnkiConfig()
-        card = WordCard(
-            word="azul",
-            ipa="a.ˈsul",
-            part_of_speech="adjective"
-        )
-        
+        card = WordCard(word="azul", ipa="a.ˈsul", part_of_speech="adjective")
+
         result = create_field_3_content(card, config)
         assert result == "Adjetivo."
 
@@ -63,9 +59,9 @@ class TestCreateField3Content:
             word="hola",
             ipa="ˈo.la",
             part_of_speech="interjection",
-            personal_context="Saludo común"
+            personal_context="Saludo común",
         )
-        
+
         result = create_field_3_content(card, config)
         assert result == "Interjección. Saludo común."
 
@@ -80,21 +76,21 @@ class TestCreateCsvRow:
             part_of_speech="noun",
             gender="masculine",
             personal_context="Mi mascota",
-            guid="test-guid-1234"
+            guid="test-guid-1234",
         )
         # Mock file paths
         card.image_path = Path("gato.jpg")
         card.audio_path = Path("gato.mp3")
-        
+
         result = create_csv_row(card, config)
-        
+
         expected = [
             "gato",
             '<img src="gato-test-gui.jpg">',
             "Sustantivo masculino. Mi mascota.",
             "[sound:gato-test-gui.mp3] ˈga.to",
             "",
-            "test-guid-1234"
+            "test-guid-1234",
         ]
         assert result == expected
 
@@ -106,18 +102,18 @@ class TestCreateCsvRow:
             ipa="pa.ˈla.βra",
             part_of_speech="noun",
             gender="feminine",
-            guid="test-guid-5678"
+            guid="test-guid-5678",
         )
-        
+
         result = create_csv_row(card, config)
-        
+
         expected = [
             "palabra",
             "",
             "Sustantivo femenino.",
             "pa.ˈla.βra",
             "",
-            "test-guid-5678"
+            "test-guid-5678",
         ]
         assert result == expected
 
@@ -128,11 +124,11 @@ class TestCreateCsvRow:
             word="escribir",
             ipa="es.kri.ˈβir",
             part_of_speech="verb",
-            guid="test-guid-9999"
+            guid="test-guid-9999",
         )
-        
+
         result = create_csv_row(card, config)
-        
+
         assert result[4] == "y"  # Test spelling field should be "y"
 
 
@@ -145,13 +141,13 @@ class TestCopyMediaFiles:
             session_dir.mkdir()
             anki_dir = Path(tmpdir) / "anki"
             anki_dir.mkdir()
-            
+
             # Create test files
             image_file = session_dir / "casa-12345678.jpg"
             audio_file = session_dir / "casa-12345678.mp3"
             image_file.write_text("fake image")
             audio_file.write_text("fake audio")
-            
+
             # Set up session and card
             session = Session(output_directory=session_dir)
             card = WordCard(
@@ -160,19 +156,19 @@ class TestCopyMediaFiles:
                 part_of_speech="noun",
                 guid="12345678-1234-5678-9abc-def012345678",
                 image_path=image_file,
-                audio_path=audio_file
+                audio_path=audio_file,
             )
             card.mark_complete()
             session.add_card(card)
-            
+
             config = AnkiConfig(anki_media_path=anki_dir)
-            
+
             result = copy_media_files(session, config)
-            
+
             # Check results
             assert result["casa_image"] is True
             assert result["casa_audio"] is True
-            
+
             # Check files were copied
             assert (anki_dir / "casa-12345678.jpg").exists()
             assert (anki_dir / "casa-12345678.mp3").exists()
@@ -181,10 +177,10 @@ class TestCopyMediaFiles:
     def test_raises_error_for_missing_anki_path(self, mock_find):
         """Test error when Anki media path not found."""
         mock_find.return_value = None  # Simulate not finding Anki path
-        
+
         session = Session()
         config = AnkiConfig(anki_media_path=None)
-        
+
         with pytest.raises(ValueError, match="Anki collection.media path not found"):
             copy_media_files(session, config)
 
@@ -193,16 +189,16 @@ class TestCopyMediaFiles:
         with tempfile.TemporaryDirectory() as tmpdir:
             anki_dir = Path(tmpdir)
             session = Session()
-            
+
             # Add incomplete card
             card = WordCard(word="test", ipa="test", part_of_speech="noun")
             # Don't mark as complete
             session.add_card(card)
-            
+
             config = AnkiConfig(anki_media_path=anki_dir)
-            
+
             result = copy_media_files(session, config)
-            
+
             # Should return empty results (no files copied)
             assert len(result) == 0
 
@@ -212,25 +208,25 @@ class TestGenerateCsv:
         """Test successful CSV generation."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "test.csv"
-            
+
             session = Session()
             card = WordCard(
                 word="perro",
-                ipa="ˈpe.ro", 
+                ipa="ˈpe.ro",
                 part_of_speech="noun",
                 gender="masculine",
-                guid="test-guid-abcd"
+                guid="test-guid-abcd",
             )
             card.mark_complete()
             session.add_card(card)
-            
+
             config = AnkiConfig()
-            
+
             result = generate_csv(session, config, output_path)
-            
+
             assert result is True
             assert output_path.exists()
-            
+
             # Check CSV content
             content = output_path.read_text()
             assert "#notetype:2. Picture Words" in content
@@ -242,16 +238,16 @@ class TestGenerateCsv:
         """Test CSV generation fails for incomplete session."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "test.csv"
-            
+
             session = Session()
             card = WordCard(word="test", ipa="test", part_of_speech="noun")
             # Don't mark as complete
             session.add_card(card)
-            
+
             config = AnkiConfig()
-            
+
             result = generate_csv(session, config, output_path)
-            
+
             assert result is False
             assert not output_path.exists()
 
@@ -264,14 +260,14 @@ class TestExportToAnki:
         # Mock successful operations
         mock_copy_media.return_value = {"test_image": True}
         mock_generate_csv.return_value = True
-        
+
         session = Session()
         card = WordCard(word="test", ipa="test", part_of_speech="noun")
         card.mark_complete()
         session.add_card(card)
-        
+
         result = export_to_anki(session)
-        
+
         assert result is True
         mock_copy_media.assert_called_once()
         mock_generate_csv.assert_called_once()
@@ -282,7 +278,7 @@ class TestExportToAnki:
         card = WordCard(word="test", ipa="test", part_of_speech="noun")
         # Don't mark as complete
         session.add_card(card)
-        
+
         result = export_to_anki(session)
-        
+
         assert result is False

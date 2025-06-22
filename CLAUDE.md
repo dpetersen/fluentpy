@@ -178,10 +178,13 @@ When updating image prompts, corresponding test assertions need updates to match
 - **All code must have type hints and pass both ruff and pyright checks**
 - When making changes, always run tests, ruff, and pyright to ensure code quality
 
+### External Dependencies
+
+- **mpv**: Required for audio playback functionality. The application checks for mpv availability at startup and will exit with installation instructions if not found.
+
 ## Limitations and Future Enhancements
 
 ### Current Limitations
-- Audio playback during review shows path but doesn't play (TODO in review.py:110)
 - No session save/resume capability for large batches
 - Terminal-only interface (no GUI)
 

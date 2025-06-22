@@ -13,9 +13,9 @@ class TestFindAnkiCollectionMedia:
         mock_home.return_value = Path("/home/user")
         mock_exists.return_value = True
         mock_is_dir.return_value = True
-        
+
         result = find_anki_collection_media()
-        
+
         expected = Path("/home/user/.local/share/Anki2/User 1/collection.media")
         assert result == expected
 
@@ -25,9 +25,9 @@ class TestFindAnkiCollectionMedia:
         """Test returns None when no Anki folder found."""
         mock_home.return_value = Path("/home/user")
         mock_exists.return_value = False
-        
+
         result = find_anki_collection_media()
-        
+
         assert result is None
 
 
@@ -35,7 +35,7 @@ class TestAnkiConfig:
     def test_default_initialization(self):
         """Test AnkiConfig with default values."""
         config = AnkiConfig()
-        
+
         assert config.deck_name == "FluentPy Test"
         assert config.test_spelling is False
         assert config.NOTE_TYPE == "2. Picture Words"
@@ -44,11 +44,9 @@ class TestAnkiConfig:
         """Test AnkiConfig with custom values."""
         custom_path = Path("/custom/path")
         config = AnkiConfig(
-            deck_name="My Custom Deck",
-            anki_media_path=custom_path,
-            test_spelling=True
+            deck_name="My Custom Deck", anki_media_path=custom_path, test_spelling=True
         )
-        
+
         assert config.deck_name == "My Custom Deck"
         assert config.anki_media_path == custom_path
         assert config.test_spelling is True
@@ -56,7 +54,7 @@ class TestAnkiConfig:
     def test_get_spanish_part_of_speech(self):
         """Test Spanish part of speech translation."""
         config = AnkiConfig()
-        
+
         assert config.get_spanish_part_of_speech("noun") == "Sustantivo"
         assert config.get_spanish_part_of_speech("verb") == "Verbo"
         assert config.get_spanish_part_of_speech("unknown") == "Unknown"
@@ -64,7 +62,7 @@ class TestAnkiConfig:
     def test_get_spanish_gender(self):
         """Test Spanish gender translation."""
         config = AnkiConfig()
-        
+
         assert config.get_spanish_gender("masculine") == "masculino"
         assert config.get_spanish_gender("feminine") == "femenino"
         assert config.get_spanish_gender(None) == ""
@@ -73,7 +71,7 @@ class TestAnkiConfig:
     def test_get_spanish_verb_type(self):
         """Test Spanish verb type translation."""
         config = AnkiConfig()
-        
+
         assert config.get_spanish_verb_type("transitive") == "transitivo"
         assert config.get_spanish_verb_type("reflexive") == "reflexivo"
         assert config.get_spanish_verb_type(None) == ""

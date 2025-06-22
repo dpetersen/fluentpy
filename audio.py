@@ -16,9 +16,7 @@ def get_random_voice_id() -> str:
     return random.choice(MEXICAN_SPANISH_VOICES)
 
 
-async def generate_audio(
-    client: AsyncElevenLabs, word: str, path: str
-) -> str | None:
+async def generate_audio(client: AsyncElevenLabs, word: str, path: str) -> str | None:
     """Generate audio pronunciation for a Spanish word and save to file."""
     try:
         # Get a random voice ID from our hardcoded list
