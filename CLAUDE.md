@@ -31,15 +31,15 @@ uv run pytest tests/test_pronunciation.py::test_get_pronunciation
 
 ### Linting and Type Checking
 ```bash
-# Run ruff linter
-ruff check .
-ruff format .
+# Run ruff linter and formatter via uv
+uv run ruff check .
+uv run ruff format .
 
-# Run pyright type checker
-pyright
+# Run pyright type checker via uv
+uv run pyright
 ```
 
-**Important**: Both ruff and pyright must pass before any changes are considered complete. If these tools are not available in the environment, they should be installed and any issues fixed.
+**Important**: Both ruff and pyright must pass before any changes are considered complete. Always run these tools via `uv run` to ensure they use the project's environment and dependencies.
 
 ## Architecture Overview
 

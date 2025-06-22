@@ -26,17 +26,25 @@ async def process_word(
     openai_client = AsyncOpenAI()
     elevenlabs_client = AsyncElevenLabs()
 
-    analysis_task = analyze_word(client=openai_client, word=word)
-    image_task = None
-    audio_task = None
+    analysis = await analyze_word(client=openai_client, word=word)
+    logger.info(
+        "Word analysis complete",
+        word=word,
+        ipa=analysis["ipa"],
+        part_of_speech=analysis["part_of_speech"],
+        gender=analysis["gender"],
+        verb_type=analysis["verb_type"],
+    )
 
+    tasks: list = []
     if should_generate_image:
         logger.info("Generating image", word=word)
         try:
-            image_path = f"./{word}.png"
+            image_path = f"./{word}.jpg"
             image_task = generate_image(
-                client=openai_client, word=word, path=image_path
+                client=openai_client, word=word, analysis=analysis, path=image_path
             )
+            tasks.append(("image", image_task))
         except Exception as e:
             logger.error("Error generating image", word=word, error=str(e))
 
@@ -47,38 +55,20 @@ async def process_word(
             audio_task = generate_audio(
                 client=elevenlabs_client, word=word, path=audio_path
             )
+            tasks.append(("audio", audio_task))
         except Exception as e:
             logger.error("Error generating audio", word=word, error=str(e))
 
-    tasks: list = [analysis_task]
-    if image_task is not None:
-        tasks.append(image_task)
-    if audio_task is not None:
-        tasks.append(audio_task)
+    if tasks:
+        task_results = await asyncio.gather(*[task for _, task in tasks])
 
-    results = await asyncio.gather(*tasks)
-    analysis = results[0]
-    logger.info(
-        "Word analysis complete",
-        word=word,
-        ipa=analysis["ipa"],
-        part_of_speech=analysis["part_of_speech"],
-        gender=analysis["gender"],
-        verb_type=analysis["verb_type"],
-    )
-
-    result_index = 1
-    if should_generate_image and len(results) > result_index:
-        image_path = results[result_index]
-        if image_path:
-            logger.info("Image saved", path=image_path)
-            view_image(path=image_path)
-        result_index += 1
-
-    if should_generate_audio and len(results) > result_index:
-        audio_path = results[result_index]
-        if audio_path:
-            logger.info("Audio saved", path=audio_path)
+        for i, (task_type, _) in enumerate(tasks):
+            result = task_results[i]
+            if task_type == "image" and result:
+                logger.info("Image saved", path=result)
+                view_image(path=result)
+            elif task_type == "audio" and result:
+                logger.info("Audio saved", path=result)
 
 
 def main():
