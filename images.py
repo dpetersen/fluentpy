@@ -7,7 +7,7 @@ from term_image.image import from_file
 from word_analysis import WordAnalysis
 
 
-def _create_prompt(word: str, analysis: WordAnalysis) -> str:
+def _create_prompt(word: str, analysis: WordAnalysis, extra_prompt: str | None = None) -> str:
     base_prompt = """
     I am making memorable Anki flashcards for Spanish vocabulary. It is absolutely 
     critical that the word I give you, or any similar words, SHOULD NOT appear in 
@@ -57,14 +57,19 @@ def _create_prompt(word: str, analysis: WordAnalysis) -> str:
             Create a clear, memorable image that represents this concept.
             """
 
-    return f"{base_prompt.strip()}\n\n{specific_prompt.strip()}\n\nThe word is: {word}"
+    final_prompt = f"{base_prompt.strip()}\n\n{specific_prompt.strip()}\n\nThe word is: {word}"
+    
+    if extra_prompt:
+        final_prompt += f"\n\nAdditional context: {extra_prompt}"
+    
+    return final_prompt
 
 
 async def generate_image(
-    *, client: AsyncOpenAI, word: str, analysis: WordAnalysis, path: str
+    *, client: AsyncOpenAI, word: str, analysis: WordAnalysis, path: str, extra_prompt: str | None = None
 ) -> str:
     logger.debug("Generating image", word=word)
-    prompt = _create_prompt(word, analysis)
+    prompt = _create_prompt(word, analysis, extra_prompt)
     response = await client.images.generate(
         model="gpt-image-1",
         prompt=prompt,

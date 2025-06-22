@@ -194,3 +194,43 @@ class TestCreatePrompt:
         )
         assert "mexican" in prompt.lower()
         assert "the word is: test" in prompt.lower()
+
+    def test_extra_prompt_is_included(self):
+        """Test that extra prompt is included when provided"""
+        analysis: WordAnalysis = {
+            "ipa": "ˈka.sa",
+            "part_of_speech": "noun",
+            "gender": "feminine",
+            "verb_type": None,
+        }
+        
+        extra_prompt = "make it colorful with bright flowers"
+        prompt = _create_prompt("casa", analysis, extra_prompt)
+        
+        assert "Additional context: make it colorful with bright flowers" in prompt
+        # Should still include base instructions
+        assert "anki flashcards" in prompt.lower()
+        # Should still include gender-specific instructions for feminine noun
+        assert any(
+            term in prompt.lower()
+            for term in ["freezing", "cold", "ice", "arctic"]
+        )
+
+    def test_no_extra_prompt_works_normally(self):
+        """Test that prompt works normally when no extra prompt provided"""
+        analysis: WordAnalysis = {
+            "ipa": "ˈka.sa", 
+            "part_of_speech": "noun",
+            "gender": "feminine",
+            "verb_type": None,
+        }
+        
+        prompt = _create_prompt("casa", analysis)
+        
+        assert "Additional context:" not in prompt
+        # Should still include base and gender-specific instructions
+        assert "anki flashcards" in prompt.lower()
+        assert any(
+            term in prompt.lower()
+            for term in ["freezing", "cold", "ice", "arctic"]
+        )

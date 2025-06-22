@@ -96,6 +96,7 @@ async def generate_media_for_session(session: Session) -> None:
                 word=card.word,
                 analysis=enhanced_analysis,
                 path=str(image_path),
+                extra_prompt=card.extra_image_prompt,
             )
             
             audio_task = generate_audio(
@@ -150,8 +151,13 @@ async def regenerate_image(
         "verb_type": card.verb_type,
     }
     
-    # TODO: Incorporate additional_prompt into image generation
-    # This would require modifying the images.py module to accept extra context
+    # Combine original extra prompt with additional regeneration context
+    combined_extra_prompt = card.extra_image_prompt
+    if additional_prompt:
+        if combined_extra_prompt:
+            combined_extra_prompt = f"{combined_extra_prompt}. {additional_prompt}"
+        else:
+            combined_extra_prompt = additional_prompt
     
     try:
         result_path = await generate_image(
@@ -159,6 +165,7 @@ async def regenerate_image(
             word=card.word,
             analysis=enhanced_analysis,
             path=str(image_path),
+            extra_prompt=combined_extra_prompt,
         )
         
         if result_path:
