@@ -9,9 +9,11 @@ wheels/
 # Virtual environments
 .venv
 
-# Ignore generated images I keep accidentally writing into this repo while I
+# Ignore generated media I keep accidentally writing into this repo while I
 # work on the feature
 *.png
+*.jpg
+*.mp3
 
 # This is probably safe for me to check in for a personal repo, but I'll ignore
 # it for now.
