@@ -1,5 +1,4 @@
 import random
-from typing import Optional
 
 from elevenlabs.client import AsyncElevenLabs
 from loguru import logger
@@ -19,7 +18,7 @@ def get_random_voice_id() -> str:
 
 async def generate_audio(
     client: AsyncElevenLabs, word: str, path: str
-) -> Optional[str]:
+) -> str | None:
     """Generate audio pronunciation for a Spanish word and save to file."""
     try:
         # Get a random voice ID from our hardcoded list
