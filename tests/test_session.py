@@ -139,23 +139,18 @@ class TestRegenerateImage:
         """Test successful image regeneration."""
         with tempfile.TemporaryDirectory() as tmpdir:
             session = Session(output_directory=Path(tmpdir))
-            
-            # Create test card with existing image
-            old_image = Path(tmpdir) / "old_image.jpg"
-            old_image.touch()
             card = WordCard(
-                word="casa", ipa="ˈka.sa", part_of_speech="noun", image_path=old_image
+                word="casa", ipa="ˈka.sa", part_of_speech="noun"
             )
             
             # Mock successful regeneration
-            new_image_path = Path(tmpdir) / "casa_regen.jpg"
-            mock_gen_image.return_value = str(new_image_path)
+            expected_path = session.get_media_path(card, ".jpg")
+            mock_gen_image.return_value = str(expected_path)
             
             result = await regenerate_image(session, card, "additional context")
             
             assert result is True
-            assert card.image_path == new_image_path
-            assert not old_image.exists()  # Old image should be deleted
+            assert card.image_path == expected_path
 
     @pytest.mark.asyncio
     @patch("session.generate_image")
@@ -183,23 +178,18 @@ class TestRegenerateAudio:
         """Test successful audio regeneration."""
         with tempfile.TemporaryDirectory() as tmpdir:
             session = Session(output_directory=Path(tmpdir))
-            
-            # Create test card with existing audio
-            old_audio = Path(tmpdir) / "old_audio.mp3"
-            old_audio.touch()
             card = WordCard(
-                word="hola", ipa="ˈo.la", part_of_speech="interjection", audio_path=old_audio
+                word="hola", ipa="ˈo.la", part_of_speech="interjection"
             )
             
             # Mock successful regeneration
-            new_audio_path = str(Path(tmpdir) / "hola_regen.mp3")
-            mock_gen_audio.return_value = new_audio_path
+            expected_path = session.get_media_path(card, ".mp3")
+            mock_gen_audio.return_value = str(expected_path)
             
             result = await regenerate_audio(session, card)
             
             assert result is True
-            assert card.audio_path == Path(new_audio_path)
-            assert not old_audio.exists()  # Old audio should be deleted
+            assert card.audio_path == expected_path
 
     @pytest.mark.asyncio
     @patch("session.generate_audio")

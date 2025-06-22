@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -25,10 +26,16 @@ class WordCard:
     image_path: Path | None = None
     audio_path: Path | None = None
     is_complete: bool = False
+    guid: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def mark_complete(self) -> None:
         """Mark this card as complete when user approves all media."""
         self.is_complete = True
+
+    @property
+    def short_id(self) -> str:
+        """First 8 characters of GUID for media filenames."""
+        return self.guid[:8]
 
     @property
     def needs_image(self) -> bool:
@@ -63,19 +70,8 @@ class Session:
         """Check if all cards are complete."""
         return all(card.is_complete for card in self.cards)
 
-    def get_media_path(self, word: str, extension: str) -> Path:
-        """Generate a unique media file path for a word."""
-        base_name = word.lower().replace(" ", "_")
-        counter = 1
-        while True:
-            if counter == 1:
-                filename = f"{base_name}{extension}"
-            else:
-                filename = f"{base_name}_{counter}{extension}"
-            path = self.output_directory / filename
-            if not path.exists() and not any(
-                str(card.image_path) == str(path) or str(card.audio_path) == str(path)
-                for card in self.cards
-            ):
-                return path
-            counter += 1
+    def get_media_path(self, card: "WordCard", extension: str) -> Path:
+        """Generate a unique media file path using the card's UUID."""
+        clean_word = card.word.lower().replace(" ", "_")
+        filename = f"{clean_word}-{card.short_id}{extension}"
+        return self.output_directory / filename

@@ -61,6 +61,29 @@ class TestWordCard:
         card.mark_complete()
         assert card.is_complete is True
 
+    def test_guid_generation(self):
+        """Test that each card gets a unique GUID."""
+        card1 = WordCard(word="casa", ipa="ˈka.sa", part_of_speech="noun")
+        card2 = WordCard(word="perro", ipa="ˈpe.ro", part_of_speech="noun")
+        
+        # Each card should have a GUID
+        assert card1.guid is not None
+        assert card2.guid is not None
+        
+        # GUIDs should be different
+        assert card1.guid != card2.guid
+        
+        # GUIDs should be valid UUID format (36 chars with dashes)
+        assert len(card1.guid) == 36
+        assert card1.guid.count('-') == 4
+
+    def test_short_id(self):
+        """Test short_id property returns first 8 characters of GUID."""
+        card = WordCard(word="test", ipa="test", part_of_speech="noun")
+        
+        assert len(card.short_id) == 8
+        assert card.short_id == card.guid[:8]
+
 
 class TestSession:
     def test_create_empty(self):
@@ -115,25 +138,23 @@ class TestSession:
         card1.mark_complete()
         assert session.is_complete is True
 
-    def test_get_media_path_unique(self):
-        """Test generating unique media paths."""
+    def test_get_media_path_with_uuid(self):
+        """Test media path generation with UUID."""
         with tempfile.TemporaryDirectory() as tmpdir:
             session = Session(output_directory=Path(tmpdir))
-
-            path1 = session.get_media_path("casa", ".jpg")
-            assert path1 == Path(tmpdir) / "casa.jpg"
-
-            # Add a card with that path
             card = WordCard(word="casa", ipa="ˈka.sa", part_of_speech="noun")
-            card.image_path = path1
-            session.add_card(card)
 
-            # Next call should generate a different path
-            path2 = session.get_media_path("casa", ".jpg")
-            assert path2 == Path(tmpdir) / "casa_2.jpg"
+            path = session.get_media_path(card, ".jpg")
+            
+            # Should contain word and short UUID
+            assert "casa-" in str(path)
+            assert str(path).endswith(".jpg")
+            assert len(card.short_id) == 8
 
     def test_get_media_path_special_characters(self):
         """Test media path generation with special characters."""
         session = Session()
-        path = session.get_media_path("niño pequeño", ".mp3")
-        assert "niño_pequeño.mp3" in str(path)
+        card = WordCard(word="niño pequeño", ipa="ˈni.ɲo pe.ˈke.ɲo", part_of_speech="noun")
+        path = session.get_media_path(card, ".mp3")
+        assert "niño_pequeño-" in str(path)
+        assert str(path).endswith(".mp3")

@@ -79,8 +79,8 @@ async def generate_media_for_session(session: Session) -> None:
             logger.info("Generating media", word=card.word)
             
             # Generate paths for media files
-            image_path = session.get_media_path(card.word, ".jpg")
-            audio_path = session.get_media_path(card.word, ".mp3")
+            image_path = session.get_media_path(card, ".jpg")
+            audio_path = session.get_media_path(card, ".mp3")
             
             # Create enhanced image prompt if extra context provided
             enhanced_analysis: WordAnalysis = {
@@ -139,8 +139,8 @@ async def regenerate_image(
     
     openai_client = AsyncOpenAI()
     
-    # Create new path to avoid overwriting
-    image_path = session.get_media_path(f"{card.word}_regen", ".jpg")
+    # Use the same path (regeneration replaces the old image)
+    image_path = session.get_media_path(card, ".jpg")
     
     # Build enhanced analysis with additional context
     enhanced_analysis: WordAnalysis = {
@@ -162,10 +162,6 @@ async def regenerate_image(
         )
         
         if result_path:
-            # Remove old image if it exists
-            if card.image_path and card.image_path.exists():
-                card.image_path.unlink()
-            
             card.image_path = image_path
             logger.info("Image regenerated successfully", word=card.word, path=image_path)
             return True
@@ -182,8 +178,8 @@ async def regenerate_audio(session: Session, card: WordCard) -> bool:
     
     elevenlabs_client = AsyncElevenLabs()
     
-    # Create new path to avoid overwriting
-    audio_path = session.get_media_path(f"{card.word}_regen", ".mp3")
+    # Use the same path (regeneration replaces the old audio)
+    audio_path = session.get_media_path(card, ".mp3")
     
     try:
         result_path = await generate_audio(
@@ -193,10 +189,6 @@ async def regenerate_audio(session: Session, card: WordCard) -> bool:
         )
         
         if result_path:
-            # Remove old audio if it exists
-            if card.audio_path and card.audio_path.exists():
-                card.audio_path.unlink()
-            
             card.audio_path = Path(result_path)
             logger.info("Audio regenerated successfully", word=card.word, path=audio_path)
             return True
