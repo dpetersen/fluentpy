@@ -1,49 +1,54 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from models import WordInput
 from word_input import get_word_inputs, get_words_from_list
 
 
 class TestGetWordInputs:
+    @pytest.mark.asyncio
     @patch("word_input.questionary.text")
-    def test_single_word_no_metadata(self, mock_text):
+    async def test_single_word_no_metadata(self, mock_text):
         """Test collecting a single word without optional fields."""
         # Mock the sequence of text inputs
-        mock_text.return_value.ask.side_effect = [
+        mock_text.return_value.ask_async = AsyncMock(side_effect=[
             "hola",  # word
             "",      # personal context (empty)
             "",      # extra image prompt (empty)
             "",      # next word (finish)
-        ]
+        ])
         
-        result = get_word_inputs()
+        result = await get_word_inputs()
         
         assert len(result) == 1
         assert result[0].word == "hola"
         assert result[0].personal_context is None
         assert result[0].extra_image_prompt is None
 
+    @pytest.mark.asyncio
     @patch("word_input.questionary.text")
-    def test_single_word_with_metadata(self, mock_text):
+    async def test_single_word_with_metadata(self, mock_text):
         """Test collecting a word with all optional fields."""
-        mock_text.return_value.ask.side_effect = [
+        mock_text.return_value.ask_async = AsyncMock(side_effect=[
             "correr",                          # word
             "I run every morning",             # personal context
             "person running in sunny park",    # extra image prompt
             "",                                # next word (finish)
-        ]
+        ])
         
-        result = get_word_inputs()
+        result = await get_word_inputs()
         
         assert len(result) == 1
         assert result[0].word == "correr"
         assert result[0].personal_context == "I run every morning"
         assert result[0].extra_image_prompt == "person running in sunny park"
 
+    @pytest.mark.asyncio
     @patch("word_input.questionary.text")
-    def test_multiple_words(self, mock_text):
+    async def test_multiple_words(self, mock_text):
         """Test collecting multiple words with mixed metadata."""
-        mock_text.return_value.ask.side_effect = [
+        mock_text.return_value.ask_async = AsyncMock(side_effect=[
             "gato",                  # word 1
             "My neighbor has one",   # context 1
             "",                      # no image prompt 1
@@ -51,9 +56,9 @@ class TestGetWordInputs:
             "",                      # no context 2
             "golden retriever",      # image prompt 2
             "",                      # finish
-        ]
+        ])
         
-        result = get_word_inputs()
+        result = await get_word_inputs()
         
         assert len(result) == 2
         assert result[0].word == "gato"
@@ -63,17 +68,18 @@ class TestGetWordInputs:
         assert result[1].personal_context is None
         assert result[1].extra_image_prompt == "golden retriever"
 
+    @pytest.mark.asyncio
     @patch("word_input.questionary.text")
-    def test_word_normalization(self, mock_text):
+    async def test_word_normalization(self, mock_text):
         """Test that words are normalized to lowercase and trimmed."""
-        mock_text.return_value.ask.side_effect = [
+        mock_text.return_value.ask_async = AsyncMock(side_effect=[
             "  CASA  ",              # word with spaces and caps
             "  My home  ",           # context with spaces
             "  ",                    # whitespace-only image prompt
             "",                      # finish
-        ]
+        ])
         
-        result = get_word_inputs()
+        result = await get_word_inputs()
         
         assert len(result) == 1
         assert result[0].word == "casa"

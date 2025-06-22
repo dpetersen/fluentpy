@@ -4,17 +4,17 @@ from loguru import logger
 from models import WordInput
 
 
-def get_word_inputs() -> list[WordInput]:
+async def get_word_inputs() -> list[WordInput]:
     """Interactively collect words and metadata from the user."""
     word_inputs: list[WordInput] = []
     
     logger.info("Starting word input collection")
     
     while True:
-        word = questionary.text(
+        word = await questionary.text(
             "Enter a Spanish word (or press Enter to finish):",
             validate=lambda text: True if text.strip() or not text else False,
-        ).ask()
+        ).ask_async()
         
         if not word:
             break
@@ -22,15 +22,15 @@ def get_word_inputs() -> list[WordInput]:
         word = word.strip().lower()
         
         # Always ask for personal context (optional - can be empty)
-        personal_context_input = questionary.text(
+        personal_context_input = await questionary.text(
             "Personal context (memory aid, usage example, etc.) - press Enter to skip:"
-        ).ask()
+        ).ask_async()
         personal_context = personal_context_input.strip() if personal_context_input.strip() else None
         
         # Always ask for extra image prompt (optional - can be empty)
-        extra_image_prompt_input = questionary.text(
+        extra_image_prompt_input = await questionary.text(
             "Extra image prompt (additional context for image generation) - press Enter to skip:"
-        ).ask()
+        ).ask_async()
         extra_image_prompt = extra_image_prompt_input.strip() if extra_image_prompt_input.strip() else None
         
         word_input = WordInput(

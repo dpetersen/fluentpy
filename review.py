@@ -32,9 +32,9 @@ async def review_session(session: Session) -> None:
             # Only one card left, review it automatically
             selected_card = incomplete_cards[0]
         else:
-            choice = questionary.select(
+            choice = await questionary.select(
                 "Select a word to review:", choices=card_choices
-            ).ask()
+            ).ask_async()
             
             # Find the selected card
             selected_index = card_choices.index(choice)
@@ -78,10 +78,10 @@ async def review_card(session: Session, card: WordCard) -> None:
         if card.audio_path:
             actions.append("🔊 Regenerate audio")
         
-        action = questionary.select(
+        action = await questionary.select(
             f"What would you like to do with '{card.word}'?",
             choices=actions,
-        ).ask()
+        ).ask_async()
         
         if action.startswith("✅"):
             card.mark_complete()
@@ -117,10 +117,10 @@ async def handle_image_regeneration(session: Session, card: WordCard) -> None:
     print(f"\nRegenerating image for '{card.word}'...")
     
     # Ask for additional context
-    additional_context = questionary.text(
+    additional_context = await questionary.text(
         "Additional image context (press Enter to skip):",
         instruction="e.g., 'make it more colorful', 'add a dog', 'sunset lighting'"
-    ).ask()
+    ).ask_async()
     
     additional_prompt = additional_context.strip() if additional_context.strip() else None
     

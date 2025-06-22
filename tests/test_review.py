@@ -1,6 +1,6 @@
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -83,7 +83,7 @@ class TestHandleImageRegeneration:
         session = Session()
         card = WordCard(word="casa", ipa="ˈka.sa", part_of_speech="noun")
         
-        mock_text.return_value.ask.return_value = "make it colorful"
+        mock_text.return_value.ask_async = AsyncMock(return_value="make it colorful")
         mock_regen.return_value = True
         
         await handle_image_regeneration(session, card)
@@ -99,7 +99,7 @@ class TestHandleImageRegeneration:
         session = Session()
         card = WordCard(word="casa", ipa="ˈka.sa", part_of_speech="noun")
         
-        mock_text.return_value.ask.return_value = ""
+        mock_text.return_value.ask_async = AsyncMock(return_value="")
         mock_regen.return_value = True
         
         await handle_image_regeneration(session, card)
@@ -114,7 +114,7 @@ class TestHandleImageRegeneration:
         session = Session()
         card = WordCard(word="casa", ipa="ˈka.sa", part_of_speech="noun")
         
-        mock_text.return_value.ask.return_value = ""
+        mock_text.return_value.ask_async = AsyncMock(return_value="")
         mock_regen.return_value = False
         
         # Should not raise exception
@@ -159,7 +159,7 @@ class TestReviewCard:
         session = Session()
         card = WordCard(word="test", ipa="test", part_of_speech="noun")
         
-        mock_select.return_value.ask.return_value = "✅ Approve this card"
+        mock_select.return_value.ask_async = AsyncMock(return_value="✅ Approve this card")
         
         await review_card(session, card)
         
@@ -180,10 +180,10 @@ class TestReviewCard:
             )
             
             # First call regenerate, then approve
-            mock_select.return_value.ask.side_effect = [
+            mock_select.return_value.ask_async = AsyncMock(side_effect=[
                 "🖼️  Regenerate image",
                 "✅ Approve this card",
-            ]
+            ])
             
             await review_card(session, card)
             
@@ -204,10 +204,10 @@ class TestReviewCard:
             )
             
             # First call regenerate, then approve
-            mock_select.return_value.ask.side_effect = [
+            mock_select.return_value.ask_async = AsyncMock(side_effect=[
                 "🔊 Regenerate audio",
                 "✅ Approve this card",
-            ]
+            ])
             
             await review_card(session, card)
             
