@@ -184,9 +184,12 @@ When updating image prompts, corresponding test assertions need updates to match
 
 ## Limitations and Future Enhancements
 
-### Current Limitations
-- No session save/resume capability for large batches
-- Terminal-only interface (no GUI)
-
 ### User-Requested Design
 The user specifically chose a terminal interface over GUI for simplicity and speed. The batch processing workflow was designed to be efficient for their learning process.
+
+### Desired Future Functionality
+
+- Creation of other card types, like Cloze cards
+- Create multiple images per prompt and choose one
+- Periodic deck backups to S3
+    - Anki does not backup media, supposedly, and this would help to make sure we don't lose anything.
