@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Union
 
+from word_analysis import ExampleSentence
+
 
 @dataclass
 class WordInput:
@@ -68,6 +70,7 @@ class ClozeCard:
     word: str
     word_analysis: dict
     selected_sentence: str | None = None
+    selected_word_form: str | None = None
     personal_context: str | None = None
     extra_prompt: str | None = None
     memory_aid: str | None = None
@@ -113,9 +116,8 @@ class ClozeCard:
     def verb_type(self) -> str | None:
         return self.word_analysis.get("verb_type")
 
-
     @property
-    def example_sentences(self) -> list[str]:
+    def example_sentences(self) -> list[ExampleSentence]:
         return self.word_analysis.get("example_sentences", [])
 
     # For backward compatibility
@@ -159,7 +161,9 @@ class Session:
         """Check if all cards are complete."""
         return all(card.is_complete for card in self.cards)
 
-    def get_media_path(self, card: Union["WordCard", "ClozeCard"], extension: str) -> Path:
+    def get_media_path(
+        self, card: Union["WordCard", "ClozeCard"], extension: str
+    ) -> Path:
         """Generate a unique media file path using the card's UUID."""
         clean_word = card.word.lower().replace(" ", "_")
         filename = f"{clean_word}-{card.short_id}{extension}"

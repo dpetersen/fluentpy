@@ -48,7 +48,7 @@ async def review_session(session: Session) -> None:
         # Handle sentence selection for Cloze cards before review
         if isinstance(selected_card, ClozeCard) and not selected_card.selected_sentence:
             await select_sentence_for_cloze_card(selected_card)
-        
+
         # Review the selected card
         await review_card(session, selected_card)
 
@@ -57,34 +57,43 @@ async def review_session(session: Session) -> None:
 
 async def select_sentence_for_cloze_card(card: ClozeCard) -> None:
     """Let user select one sentence from the example sentences for a Cloze card."""
-    logger.info("Starting sentence selection", word=card.word, sentence_count=len(card.example_sentences))
-    
+    logger.info(
+        "Starting sentence selection",
+        word=card.word,
+        sentence_count=len(card.example_sentences),
+    )
+
     print(f"\n🧩 Choose a sentence for '{card.word}':")
-    
+
     # Create sentence choices for questionary
     sentence_choices = []
-    for i, sentence in enumerate(card.example_sentences, 1):
-        sentence_choices.append(f"{i}. {sentence}")
-    
+    for i, sentence_data in enumerate(card.example_sentences, 1):
+        sentence_text = sentence_data["sentence"]
+        word_form = sentence_data["word_form"]
+        sentence_choices.append(f"{i}. {sentence_text} (uses: {word_form})")
+
     # Let user select a sentence
     choice = await questionary.select(
-        "Select a sentence:",
-        choices=sentence_choices
+        "Select a sentence:", choices=sentence_choices
     ).ask_async()
-    
+
     # Extract the selected sentence (remove the number prefix)
     selected_index = int(choice.split(".", 1)[0]) - 1
-    selected_sentence = card.example_sentences[selected_index]
-    card.selected_sentence = selected_sentence
-    
+    sentence_data = card.example_sentences[selected_index]
+
+    card.selected_sentence = sentence_data["sentence"]
+    card.selected_word_form = sentence_data["word_form"]
+
     logger.info(
-        "Sentence selected", 
-        word=card.word, 
-        selected_sentence=selected_sentence,
-        index=selected_index + 1
+        "Sentence selected",
+        word=card.word,
+        selected_sentence=sentence_data["sentence"],
+        word_form=sentence_data["word_form"],
+        index=selected_index + 1,
     )
-    
-    print(f"✅ Selected: {selected_sentence}")
+
+    print(f"✅ Selected: {sentence_data['sentence']}")
+    print(f"   Word form used: {sentence_data['word_form']}")
     print()
 
 
@@ -106,7 +115,7 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
         print(f"Personal context: {card.personal_context}")
     if card.extra_image_prompt:
         print(f"Extra image prompt: {card.extra_image_prompt}")
-    
+
     # Show Cloze-specific information
     if isinstance(card, ClozeCard):
         if card.definitions:
@@ -115,7 +124,7 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
             print(f"Selected sentence: {card.selected_sentence}")
         else:
             print("⚠️  No sentence selected yet")
-    
+
     print(f"{'=' * 60}")
 
     # Display generated media
@@ -144,7 +153,9 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
         if action.startswith("✅"):
             # Check if Cloze card has sentence selected before approving
             if isinstance(card, ClozeCard) and not card.selected_sentence:
-                print("❌ Cannot approve Cloze card without selecting a sentence first.")
+                print(
+                    "❌ Cannot approve Cloze card without selecting a sentence first."
+                )
                 continue
             card.mark_complete()
             logger.info("Card approved", word=card.word)
@@ -179,7 +190,9 @@ async def display_card_media(card: Union[WordCard, ClozeCard]) -> None:
         print("❌ No audio available")
 
 
-async def handle_image_regeneration(session: Session, card: Union[WordCard, ClozeCard]) -> None:
+async def handle_image_regeneration(
+    session: Session, card: Union[WordCard, ClozeCard]
+) -> None:
     """Handle user request to regenerate image with optional additional context."""
     print(f"\nRegenerating image for '{card.word}'...")
 
@@ -209,7 +222,9 @@ async def handle_image_regeneration(session: Session, card: Union[WordCard, Cloz
         print("❌ Image regeneration failed. Please try again.")
 
 
-async def handle_audio_regeneration(session: Session, card: Union[WordCard, ClozeCard]) -> None:
+async def handle_audio_regeneration(
+    session: Session, card: Union[WordCard, ClozeCard]
+) -> None:
     """Handle user request to regenerate audio."""
     print(f"\nRegenerating audio for '{card.word}'...")
 

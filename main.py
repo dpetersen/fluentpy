@@ -46,7 +46,7 @@ async def main():
         print("  • Arch Linux: sudo pacman -S mpv")
         print("  • Or visit: https://mpv.io/installation/")
         sys.exit(1)
-    
+
     logger.info("Starting FluentPy session")
 
     # Step 1: Collect words from user (two-phase: vocabulary + Cloze)
@@ -71,8 +71,7 @@ async def main():
     # Step 2: Create session and analyze words
     try:
         session = await create_session(
-            vocabulary_inputs=vocabulary_inputs,
-            cloze_inputs=cloze_inputs
+            vocabulary_inputs=vocabulary_inputs, cloze_inputs=cloze_inputs
         )
         logger.info("Session created", total_cards=len(session.cards))
     except Exception as e:
@@ -86,7 +85,7 @@ async def main():
         print(f"\n🧩 Selecting sentences for {len(cloze_cards)} Cloze cards...")
         print("Choose one sentence for each word to create fill-in-the-blank cards:")
         print()
-        
+
         try:
             for card in cloze_cards:
                 await select_sentence_for_cloze_card(card)
@@ -125,7 +124,7 @@ async def main():
     # Step 6: Export to Anki
     vocabulary_cards = session.vocabulary_cards
     cloze_cards = session.cloze_cards
-    
+
     if vocabulary_cards or cloze_cards:
         export_choice = await questionary.confirm(
             "Would you like to export to Anki now?", default=True
@@ -146,7 +145,7 @@ async def main():
                 ).ask_async()
 
             export_results = []
-            
+
             # Export vocabulary cards if any exist
             if vocabulary_cards:
                 print(f"\n📚 Exporting {len(vocabulary_cards)} vocabulary cards...")
@@ -158,7 +157,9 @@ async def main():
                         logger.info("Vocabulary export completed successfully")
                     else:
                         logger.error("Vocabulary export failed")
-                        print("❌ Vocabulary export failed. Check the logs for details.")
+                        print(
+                            "❌ Vocabulary export failed. Check the logs for details."
+                        )
                 except Exception as e:
                     logger.error("Vocabulary export error", error=str(e))
                     print(f"❌ Vocabulary export error: {e}")
@@ -182,14 +183,18 @@ async def main():
                     export_results.append(("cloze", False))
 
             # Summary of export results
-            successful_exports = [card_type for card_type, success in export_results if success]
-            failed_exports = [card_type for card_type, success in export_results if not success]
-            
+            successful_exports = [
+                card_type for card_type, success in export_results if success
+            ]
+            failed_exports = [
+                card_type for card_type, success in export_results if not success
+            ]
+
             if successful_exports:
                 print(f"\n✅ Successfully exported: {', '.join(successful_exports)}")
             if failed_exports:
                 print(f"\n❌ Failed to export: {', '.join(failed_exports)}")
-                
+
         else:
             print("\n💾 Session saved. You can export later.")
     else:

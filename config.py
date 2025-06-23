@@ -161,7 +161,9 @@ class ClozeAnkiConfig:
     ):
         self.deck_name = deck_name or self.DECK_NAME
         self.anki_media_path = anki_media_path or find_anki_collection_media()
-        self.guid_column = guid_column  # Cloze cards don't use GUID for duplicate prevention
+        self.guid_column = (
+            guid_column  # Cloze cards don't use GUID for duplicate prevention
+        )
 
     def get_spanish_part_of_speech(self, part_of_speech: str) -> str:
         """Get Spanish term for part of speech."""

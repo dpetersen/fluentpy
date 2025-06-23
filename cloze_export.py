@@ -11,46 +11,47 @@ from models import ClozeCard, Session
 
 def blank_word_in_sentence(sentence: str, target_word: str) -> str:
     """Replace target word in sentence with exactly 6 underscores."""
-    # Create pattern to match word boundaries and various forms
-    # This handles conjugations and inflections
-    pattern = rf'\b{re.escape(target_word)}\w*\b'
-    
+    # Create pattern to match exact word with word boundaries
+    pattern = rf"\b{re.escape(target_word)}\b"
+
     # Replace with exactly 6 underscores
     blanked_sentence = re.sub(pattern, "______", sentence, flags=re.IGNORECASE)
-    
+
     logger.debug(
         "Word blanking applied",
         original=sentence,
         target_word=target_word,
-        result=blanked_sentence
+        result=blanked_sentence,
     )
-    
+
     return blanked_sentence
 
 
 def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
     """Create a CSV row for a single Cloze card."""
-    
+
     # Field 1: Front (Example with word blanked out or missing)
     front_example = ""
-    if card.selected_sentence:
-        front_example = blank_word_in_sentence(card.selected_sentence, card.word)
-    
+    if card.selected_sentence and card.selected_word_form:
+        front_example = blank_word_in_sentence(
+            card.selected_sentence, card.selected_word_form
+        )
+
     # Field 2: Front (Picture) - HTML img tag with UUID filename
     front_picture = ""
     if card.image_path:
         image_filename = f"{card.word.lower().replace(' ', '_')}-{card.short_id}.jpg"
         front_picture = f'<img src="{image_filename}">'
-    
+
     # Field 3: Front (Definitions, base word, etc.)
     front_definitions = card.definitions or ""
-    
+
     # Field 4: Back (a single word/phrase, no context)
     back_word = card.word
-    
+
     # Field 5: - The full sentence (no words blanked out)
     full_sentence = card.selected_sentence or ""
-    
+
     # Field 6: - Extra Info (Pronunciation, personal connections, conjugations, etc)
     extra_info_parts = []
     if card.ipa:
@@ -61,7 +62,7 @@ def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
     if card.personal_context:
         extra_info_parts.append(card.personal_context)
     extra_info = " ".join(extra_info_parts)
-    
+
     return [
         front_example,
         front_picture,
@@ -72,7 +73,9 @@ def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
     ]
 
 
-def copy_cloze_media_files(session: Session, config: ClozeAnkiConfig) -> dict[str, bool]:
+def copy_cloze_media_files(
+    session: Session, config: ClozeAnkiConfig
+) -> dict[str, bool]:
     """Copy approved Cloze card media files to Anki's collection.media folder."""
     if not config.anki_media_path:
         raise ValueError(
@@ -102,7 +105,9 @@ def copy_cloze_media_files(session: Session, config: ClozeAnkiConfig) -> dict[st
             try:
                 shutil.copy2(card.image_path, dest_image)
                 copy_results[f"{card.word}_image"] = True
-                logger.info("Copied Cloze image to Anki", word=card.word, dest=dest_image)
+                logger.info(
+                    "Copied Cloze image to Anki", word=card.word, dest=dest_image
+                )
             except Exception as e:
                 copy_results[f"{card.word}_image"] = False
                 logger.error("Failed to copy Cloze image", word=card.word, error=str(e))
@@ -117,7 +122,9 @@ def copy_cloze_media_files(session: Session, config: ClozeAnkiConfig) -> dict[st
             try:
                 shutil.copy2(card.audio_path, dest_audio)
                 copy_results[f"{card.word}_audio"] = True
-                logger.info("Copied Cloze audio to Anki", word=card.word, dest=dest_audio)
+                logger.info(
+                    "Copied Cloze audio to Anki", word=card.word, dest=dest_audio
+                )
             except Exception as e:
                 copy_results[f"{card.word}_audio"] = False
                 logger.error("Failed to copy Cloze audio", word=card.word, error=str(e))
@@ -125,11 +132,13 @@ def copy_cloze_media_files(session: Session, config: ClozeAnkiConfig) -> dict[st
     return copy_results
 
 
-def generate_cloze_csv(session: Session, config: ClozeAnkiConfig, output_path: Path) -> bool:
+def generate_cloze_csv(
+    session: Session, config: ClozeAnkiConfig, output_path: Path
+) -> bool:
     """Generate Anki import CSV file for approved Cloze cards."""
     cloze_cards = session.cloze_cards
     incomplete_cloze_cards = [card for card in cloze_cards if not card.is_complete]
-    
+
     if incomplete_cloze_cards:
         incomplete_count = len(incomplete_cloze_cards)
         logger.error(
@@ -163,9 +172,7 @@ def generate_cloze_csv(session: Session, config: ClozeAnkiConfig, output_path: P
                     logger.debug("Added Cloze card to CSV", word=card.word)
 
         logger.info(
-            "Cloze CSV generated successfully", 
-            path=output_path, 
-            cards=len(cloze_cards)
+            "Cloze CSV generated successfully", path=output_path, cards=len(cloze_cards)
         )
         return True
 
@@ -175,7 +182,9 @@ def generate_cloze_csv(session: Session, config: ClozeAnkiConfig, output_path: P
 
 
 def export_cloze_cards_to_anki(
-    session: Session, config: ClozeAnkiConfig | None = None, csv_path: Path | None = None
+    session: Session,
+    config: ClozeAnkiConfig | None = None,
+    csv_path: Path | None = None,
 ) -> bool:
     """Complete export process for Cloze cards: copy media files and generate CSV."""
     if config is None:
@@ -196,8 +205,8 @@ def export_cloze_cards_to_anki(
     if incomplete_cloze_cards:
         incomplete_words = [card.word for card in incomplete_cloze_cards]
         logger.error(
-            "Cannot export: incomplete Cloze cards found", 
-            incomplete_cards=incomplete_words
+            "Cannot export: incomplete Cloze cards found",
+            incomplete_cards=incomplete_words,
         )
         return False
 
@@ -207,7 +216,9 @@ def export_cloze_cards_to_anki(
         copy_results = copy_cloze_media_files(session, config)
         failed_copies = [k for k, v in copy_results.items() if not v]
         if failed_copies:
-            logger.warning("Some Cloze media files failed to copy", failed=failed_copies)
+            logger.warning(
+                "Some Cloze media files failed to copy", failed=failed_copies
+            )
     except Exception as e:
         logger.error("Cloze media copy failed", error=str(e))
         return False

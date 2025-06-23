@@ -8,7 +8,10 @@ from word_analysis import WordAnalysis
 
 
 def _create_prompt(
-    word: str, analysis: WordAnalysis, extra_prompt: str | None = None, sentence_context: str | None = None
+    word: str,
+    analysis: WordAnalysis,
+    extra_prompt: str | None = None,
+    sentence_context: str | None = None,
 ) -> str:
     if sentence_context:
         base_prompt = """
@@ -98,10 +101,10 @@ async def generate_image(
     sentence_context: str | None = None,
 ) -> str:
     logger.debug(
-        "Generating image", 
-        word=word, 
+        "Generating image",
+        word=word,
         has_sentence_context=bool(sentence_context),
-        sentence=sentence_context if sentence_context else None
+        sentence=sentence_context if sentence_context else None,
     )
     prompt = _create_prompt(word, analysis, extra_prompt, sentence_context)
     response = await client.images.generate(

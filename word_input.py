@@ -10,7 +10,9 @@ async def get_vocabulary_word_inputs() -> list[WordInput]:
 
     logger.info("Starting vocabulary word input collection")
     print("\n📚 Vocabulary Card Collection")
-    print("Collect words for traditional vocabulary cards with images and single-word audio.")
+    print(
+        "Collect words for traditional vocabulary cards with images and single-word audio."
+    )
     print()
 
     while True:
@@ -66,7 +68,9 @@ async def get_cloze_word_inputs() -> list[ClozeCardInput]:
 
     logger.info("Starting Cloze word input collection")
     print("\n🧩 Cloze Card Collection")
-    print("Collect words for Cloze cards with sentence context and full sentence audio.")
+    print(
+        "Collect words for Cloze cards with sentence context and full sentence audio."
+    )
     print()
 
     while True:
@@ -84,9 +88,7 @@ async def get_cloze_word_inputs() -> list[ClozeCardInput]:
         definitions_input = await questionary.text(
             "Definitions/base word info (for front of card) - press Enter to skip:"
         ).ask_async()
-        definitions = (
-            definitions_input.strip() if definitions_input.strip() else None
-        )
+        definitions = definitions_input.strip() if definitions_input.strip() else None
 
         # Always ask for personal context (optional - can be empty)
         personal_context_input = await questionary.text(
@@ -130,10 +132,10 @@ async def get_all_word_inputs() -> tuple[list[WordInput], list[ClozeCardInput]]:
     """Collect both vocabulary and Cloze word inputs in sequence."""
     # First collect vocabulary words
     vocabulary_inputs = await get_vocabulary_word_inputs()
-    
+
     # Then collect Cloze words
     cloze_inputs = await get_cloze_word_inputs()
-    
+
     return vocabulary_inputs, cloze_inputs
 
 

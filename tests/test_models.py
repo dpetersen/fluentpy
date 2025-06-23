@@ -190,18 +190,19 @@ class TestClozeCard:
             "part_of_speech": "sustantivo",
             "gender": "femenino",
             "example_sentences": [
-                "La casa es grande.",
-                "Vivo en una casa.",
-                "Mi casa tiene jardín."
-            ]
+                {"sentence": "La casa es grande.", "word_form": "casa"},
+                {"sentence": "Vivo en una casa.", "word_form": "casa"},
+                {"sentence": "Mi casa tiene jardín.", "word_form": "casa"},
+            ],
         }
-        
+
         card = ClozeCard(
             word="casa",
             word_analysis=word_analysis,
-            selected_sentence="La casa es grande."
+            selected_sentence="La casa es grande.",
+            selected_word_form="casa",
         )
-        
+
         assert card.word == "casa"
         assert card.word_analysis == word_analysis
         assert card.selected_sentence == "La casa es grande."
@@ -217,22 +218,23 @@ class TestClozeCard:
             "part_of_speech": "verbo",
             "gender": None,
             "example_sentences": [
-                "Voy a estudiar español.",
-                "Ella estudia medicina.",
-                "Estudiamos juntos."
-            ]
+                {"sentence": "Voy a estudiar español.", "word_form": "estudiar"},
+                {"sentence": "Ella estudia medicina.", "word_form": "estudia"},
+                {"sentence": "Estudiamos juntos.", "word_form": "Estudiamos"},
+            ],
         }
-        
+
         card = ClozeCard(
             word="estudiar",
             word_analysis=word_analysis,
             selected_sentence="Voy a estudiar español.",
+            selected_word_form="estudiar",
             image_path="estudiar-abc123.jpg",
             audio_path="estudiar-abc123.mp3",
             memory_aid="Think of student with books",
-            extra_prompt="Add university setting"
+            extra_prompt="Add university setting",
         )
-        
+
         assert card.word == "estudiar"
         assert card.selected_sentence == "Voy a estudiar español."
         assert card.image_path == "estudiar-abc123.jpg"
@@ -246,15 +248,18 @@ class TestClozeCard:
             "ipa": "ˈpe.ro",
             "part_of_speech": "sustantivo",
             "gender": "masculino",
-            "example_sentences": ["El perro ladra."]
+            "example_sentences": [
+                {"sentence": "El perro ladra.", "word_form": "perro"}
+            ],
         }
-        
+
         card = ClozeCard(
             word="perro",
             word_analysis=word_analysis,
-            selected_sentence="El perro ladra."
+            selected_sentence="El perro ladra.",
+            selected_word_form="perro",
         )
-        
+
         assert card.needs_image is True
         assert card.needs_audio is True
 
@@ -272,15 +277,16 @@ class TestClozeCard:
             "ipa": "ˈli.bɾo",
             "part_of_speech": "sustantivo",
             "gender": "masculino",
-            "example_sentences": ["Leo un libro."]
+            "example_sentences": [{"sentence": "Leo un libro.", "word_form": "libro"}],
         }
-        
+
         card = ClozeCard(
             word="libro",
             word_analysis=word_analysis,
-            selected_sentence="Leo un libro."
+            selected_sentence="Leo un libro.",
+            selected_word_form="libro",
         )
-        
+
         assert card.is_complete is False
         card.mark_complete()
         assert card.is_complete is True
@@ -291,18 +297,30 @@ class TestClozeCard:
             "ipa": "ˈa.ɣwa",
             "part_of_speech": "sustantivo",
             "gender": "femenino",
-            "example_sentences": ["Bebo agua."]
+            "example_sentences": [{"sentence": "Bebo agua.", "word_form": "agua"}],
         }
-        
+
         word_analysis2 = {
             "ipa": "ˈfwe.ɣo",
             "part_of_speech": "sustantivo",
             "gender": "masculino",
-            "example_sentences": ["El fuego es caliente."]
+            "example_sentences": [
+                {"sentence": "El fuego es caliente.", "word_form": "fuego"}
+            ],
         }
-        
-        card1 = ClozeCard(word="agua", word_analysis=word_analysis1, selected_sentence="Bebo agua.")
-        card2 = ClozeCard(word="fuego", word_analysis=word_analysis2, selected_sentence="El fuego es caliente.")
+
+        card1 = ClozeCard(
+            word="agua",
+            word_analysis=word_analysis1,
+            selected_sentence="Bebo agua.",
+            selected_word_form="agua",
+        )
+        card2 = ClozeCard(
+            word="fuego",
+            word_analysis=word_analysis2,
+            selected_sentence="El fuego es caliente.",
+            selected_word_form="fuego",
+        )
 
         # Each card should have a GUID
         assert card1.guid is not None
@@ -321,10 +339,15 @@ class TestClozeCard:
             "ipa": "test",
             "part_of_speech": "sustantivo",
             "gender": "masculino",
-            "example_sentences": ["Test sentence."]
+            "example_sentences": [{"sentence": "Test sentence.", "word_form": "test"}],
         }
-        
-        card = ClozeCard(word="test", word_analysis=word_analysis, selected_sentence="Test sentence.")
+
+        card = ClozeCard(
+            word="test",
+            word_analysis=word_analysis,
+            selected_sentence="Test sentence.",
+            selected_word_form="test",
+        )
 
         assert len(card.short_id) == 8
         assert card.short_id == card.guid[:8]

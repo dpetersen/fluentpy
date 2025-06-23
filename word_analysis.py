@@ -37,6 +37,7 @@ Additionally, provide exactly 10 example sentences that demonstrate the word '{w
 - For verbs: include variety of conjugations (yo, tú, él/ella, nosotros, etc.) plus at least one infinitive usage (e.g., "puedo hablar")
 - Keep sentences practical and conversational
 - Each sentence should be 6-12 words long for clarity
+- CRITICAL: For each sentence, the "word_form" field must contain the EXACT form of the word that appears in the sentence text. The sentence text must contain this exact word_form identically - character for character, case for case.
 
 Return ONLY valid JSON with this structure (no markdown formatting, no code blocks):
 {{
@@ -44,9 +45,17 @@ Return ONLY valid JSON with this structure (no markdown formatting, no code bloc
   "part_of_speech": "string",
   "gender": "string or null",
   "verb_type": "string or null",
-  "example_sentences": ["sentence1", "sentence2", ...]
+  "example_sentences": [
+    {{"sentence": "sentence text", "word_form": "exact conjugated form in sentence"}},
+    {{"sentence": "sentence text", "word_form": "exact conjugated form in sentence"}}
+  ]
 }}
 """
+
+
+class ExampleSentence(TypedDict):
+    sentence: str
+    word_form: str
 
 
 class WordAnalysis(TypedDict):
@@ -54,18 +63,16 @@ class WordAnalysis(TypedDict):
     part_of_speech: str
     gender: str | None
     verb_type: str | None
-    example_sentences: list[str]
+    example_sentences: list[ExampleSentence]
 
 
 async def analyze_word(
     *, client: AsyncOpenAI, word: str, request_examples: bool = False
 ) -> WordAnalysis:
-    logger.debug(
-        "Analyzing word", word=word, request_examples=request_examples
-    )
-    
+    logger.debug("Analyzing word", word=word, request_examples=request_examples)
+
     template = INPUT_TEMPLATE_WITH_EXAMPLES if request_examples else INPUT_TEMPLATE
-    
+
     response = await client.responses.create(
         model=MODEL,
         instructions=INSTRUCTIONS,

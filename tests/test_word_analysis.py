@@ -15,10 +15,10 @@ def openai_client():
             "gender": None,
             "verb_type": None,
             "example_sentences": [
-                "Hola, ¿cómo estás?",
-                "Hola amigo, ¿qué tal?",
-                "Hola María, buenos días."
-            ]
+                {"sentence": "Hola, ¿cómo estás?", "word_form": "Hola"},
+                {"sentence": "Hola amigo, ¿qué tal?", "word_form": "Hola"},
+                {"sentence": "Hola María, buenos días.", "word_form": "Hola"},
+            ],
         }
     )
     response = MagicMock(output_text=json_response)
@@ -41,7 +41,8 @@ async def test_analyze_word_interjection(openai_client):
     assert result["gender"] is None
     assert result["verb_type"] is None
     assert len(result["example_sentences"]) == 3
-    assert "Hola, ¿cómo estás?" in result["example_sentences"]
+    sentences = [s["sentence"] for s in result["example_sentences"]]
+    assert "Hola, ¿cómo estás?" in sentences
 
     openai_client.responses.create.assert_called_once()
     assert (
@@ -60,17 +61,17 @@ async def test_analyze_word_noun_with_gender(openai_client):
             "gender": "feminine",
             "verb_type": None,
             "example_sentences": [
-                "La casa es muy grande.",
-                "Vivo en una casa blanca.",
-                "Mi casa tiene jardín.",
-                "Esta casa es nueva.",
-                "La casa está vacía.",
-                "Compramos una casa.",
-                "Su casa es hermosa.",
-                "La casa necesita pintura.",
-                "Vendieron su casa.",
-                "Esa casa es cara."
-            ]
+                {"sentence": "La casa es muy grande.", "word_form": "casa"},
+                {"sentence": "Vivo en una casa blanca.", "word_form": "casa"},
+                {"sentence": "Mi casa tiene jardín.", "word_form": "casa"},
+                {"sentence": "Esta casa es nueva.", "word_form": "casa"},
+                {"sentence": "La casa está vacía.", "word_form": "casa"},
+                {"sentence": "Compramos una casa.", "word_form": "casa"},
+                {"sentence": "Su casa es hermosa.", "word_form": "casa"},
+                {"sentence": "La casa necesita pintura.", "word_form": "casa"},
+                {"sentence": "Vendieron su casa.", "word_form": "casa"},
+                {"sentence": "Esa casa es cara.", "word_form": "casa"},
+            ],
         }
     )
     openai_client.responses.create.return_value.output_text = json_response
@@ -82,7 +83,8 @@ async def test_analyze_word_noun_with_gender(openai_client):
     assert result["gender"] == "feminine"
     assert result["verb_type"] is None
     assert len(result["example_sentences"]) == 10
-    assert "La casa es muy grande." in result["example_sentences"]
+    sentences = [s["sentence"] for s in result["example_sentences"]]
+    assert "La casa es muy grande." in sentences
 
 
 @pytest.mark.asyncio
@@ -95,17 +97,17 @@ async def test_analyze_word_verb_with_type(openai_client):
             "gender": None,
             "verb_type": "transitive",
             "example_sentences": [
-                "Voy a comer una manzana.",
-                "Ella come verduras.",
-                "Comemos juntos.",
-                "¿Quieres comer pizza?",
-                "No puedo comer más.",
-                "Come despacio.",
-                "Comió todo el pastel.",
-                "Van a comer en el restaurante.",
-                "Comemos a las dos.",
-                "Me gusta comer frutas."
-            ]
+                {"sentence": "Voy a comer una manzana.", "word_form": "comer"},
+                {"sentence": "Ella come verduras.", "word_form": "come"},
+                {"sentence": "Comemos juntos.", "word_form": "Comemos"},
+                {"sentence": "¿Quieres comer pizza?", "word_form": "comer"},
+                {"sentence": "No puedo comer más.", "word_form": "comer"},
+                {"sentence": "Come despacio.", "word_form": "Come"},
+                {"sentence": "Comió todo el pastel.", "word_form": "Comió"},
+                {"sentence": "Van a comer en el restaurante.", "word_form": "comer"},
+                {"sentence": "Comemos a las dos.", "word_form": "Comemos"},
+                {"sentence": "Me gusta comer frutas.", "word_form": "comer"},
+            ],
         }
     )
     openai_client.responses.create.return_value.output_text = json_response
@@ -117,7 +119,8 @@ async def test_analyze_word_verb_with_type(openai_client):
     assert result["gender"] is None
     assert result["verb_type"] == "transitive"
     assert len(result["example_sentences"]) == 10
-    assert "Voy a comer una manzana." in result["example_sentences"]
+    sentences = [s["sentence"] for s in result["example_sentences"]]
+    assert "Voy a comer una manzana." in sentences
 
 
 @pytest.mark.asyncio

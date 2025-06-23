@@ -32,12 +32,13 @@ def sample_cloze_card():
             "part_of_speech": "sustantivo",
             "gender": "femenino",
             "example_sentences": [
-                "La casa es muy grande.",
-                "Vivo en una casa blanca.",
-                "Mi casa tiene jardín.",
+                {"sentence": "La casa es muy grande.", "word_form": "casa"},
+                {"sentence": "Vivo en una casa blanca.", "word_form": "casa"},
+                {"sentence": "Mi casa tiene jardín.", "word_form": "casa"},
             ],
         },
         selected_sentence="La casa es muy grande.",
+        selected_word_form="casa",
         image_path="casa-abc123.jpg",
         audio_path="casa-abc123.mp3",
         memory_aid="Think of your childhood home",
@@ -72,7 +73,7 @@ def test_export_cloze_cards_to_anki_creates_csv(
     audio_path = tmp_path / card.audio_path
     image_path.write_text("fake image")
     audio_path.write_text("fake audio")
-    
+
     # Mark card as complete
     card.mark_complete()
 
@@ -89,18 +90,22 @@ def test_export_cloze_cards_to_anki_creates_csv(
     # Check CSV content
     with open(csv_path, "r", encoding="utf-8") as f:
         content = f.read()
-        
+
     assert content.startswith("#notetype:")
     assert "#deck:Test Deck" in content
     assert "#fields:" in content
     assert "casa" in content
-    assert "La ______ es muy grande." in content  # Cloze export uses ______ not {{c1::}}
+    assert (
+        "La ______ es muy grande." in content
+    )  # Cloze export uses ______ not {{c1::}}
 
     # Verify media copying was called
     assert mock_copy.call_count == 1
 
 
-def test_export_cloze_cards_csv_headers(session_with_cloze_cards, cloze_config, tmp_path):
+def test_export_cloze_cards_csv_headers(
+    session_with_cloze_cards, cloze_config, tmp_path
+):
     """Test that CSV has correct headers with #fields: prefix."""
     cloze_config.anki_media_path = tmp_path / "collection_media"
     session_with_cloze_cards.output_directory = tmp_path
@@ -112,7 +117,7 @@ def test_export_cloze_cards_csv_headers(session_with_cloze_cards, cloze_config, 
     audio_path = tmp_path / card.audio_path
     image_path.write_text("fake image")
     audio_path.write_text("fake audio")
-    
+
     # Mark card as complete
     card.mark_complete()
 
@@ -141,7 +146,9 @@ def test_export_cloze_cards_csv_headers(session_with_cloze_cards, cloze_config, 
     assert fields_line == expected_header
 
 
-def test_export_cloze_cards_csv_content(session_with_cloze_cards, cloze_config, tmp_path):
+def test_export_cloze_cards_csv_content(
+    session_with_cloze_cards, cloze_config, tmp_path
+):
     """Test that CSV content matches expected format."""
     cloze_config.anki_media_path = tmp_path / "collection_media"
     session_with_cloze_cards.output_directory = tmp_path
@@ -153,7 +160,7 @@ def test_export_cloze_cards_csv_content(session_with_cloze_cards, cloze_config, 
     audio_path = tmp_path / card.audio_path
     image_path.write_text("fake image")
     audio_path.write_text("fake audio")
-    
+
     # Mark card as complete
     card.mark_complete()
 
@@ -174,7 +181,9 @@ def test_export_cloze_cards_csv_content(session_with_cloze_cards, cloze_config, 
     # Check the 6 fields according to ClozeAnkiConfig.FIELD_NAMES
     assert row[0] == "La ______ es muy grande."  # Front (Example with word blanked out)
     assert f'<img src="casa-{card.short_id}.jpg">' in row[1]  # Front (Picture)
-    assert row[2] == "Think of your childhood home"  # Front (Definitions) - only memory_aid, no word
+    assert (
+        row[2] == "Think of your childhood home"
+    )  # Front (Definitions) - only memory_aid, no word
     assert row[3] == "casa"  # Back (a single word/phrase)
     assert row[4] == "La casa es muy grande."  # Full sentence (no audio)
     assert "ˈka.sa" in row[5]  # Extra Info (contains IPA)
@@ -182,7 +191,7 @@ def test_export_cloze_cards_csv_content(session_with_cloze_cards, cloze_config, 
 
 def test_export_cloze_cards_no_cards(cloze_config, tmp_path):
     """Test export with no Cloze cards."""
-    
+
     session = Session(
         vocabulary_cards=[],
         cloze_cards=[],
@@ -197,20 +206,25 @@ def test_export_cloze_cards_no_cards(cloze_config, tmp_path):
     assert not csv_path.exists()
 
 
-def test_export_cloze_cards_missing_media_files(session_with_cloze_cards, cloze_config, tmp_path):
+def test_export_cloze_cards_missing_media_files(
+    session_with_cloze_cards, cloze_config, tmp_path
+):
     """Test export handling of missing media files."""
     cloze_config.anki_media_path = tmp_path / "collection_media"
     session_with_cloze_cards.output_directory = tmp_path
 
     cloze_config.anki_media_path.mkdir(parents=True)
-    
+
     # Don't create media files to simulate missing files
     # But mark the card as complete
     card = session_with_cloze_cards.cloze_cards[0]
     card.mark_complete()
 
     with patch("cloze_export.copy_cloze_media_files") as mock_copy:
-        mock_copy.return_value = {"casa_image": False, "casa_audio": False}  # Simulate copy failure but return dict
+        mock_copy.return_value = {
+            "casa_image": False,
+            "casa_audio": False,
+        }  # Simulate copy failure but return dict
         result = export_cloze_cards_to_anki(session_with_cloze_cards, cloze_config)
 
     # Export should still succeed even if media copying fails
@@ -237,20 +251,23 @@ def test_export_cloze_cards_multiple_cards(cloze_config, tmp_path):
                 "ipa": f"ˈ{word}",
                 "part_of_speech": "sustantivo",
                 "gender": "masculino" if word != "casa" else "femenino",
-                "example_sentences": [f"Sentence with {word}."],
+                "example_sentences": [
+                    {"sentence": f"Sentence with {word}.", "word_form": word}
+                ],
             },
             selected_sentence=f"Sentence with {word}.",
+            selected_word_form=word,
             image_path=f"{word}-{i}.jpg",
             audio_path=f"{word}-{i}.mp3",
         )
         cards.append(card)
-        
+
         # Create mock media files
         image_path = tmp_path / card.image_path
         audio_path = tmp_path / card.audio_path
         image_path.write_text(f"fake image {i}")
         audio_path.write_text(f"fake audio {i}")
-        
+
         # Mark card as complete
         card.mark_complete()
 
@@ -261,7 +278,14 @@ def test_export_cloze_cards_multiple_cards(cloze_config, tmp_path):
     )
 
     with patch("cloze_export.copy_cloze_media_files") as mock_copy:
-        mock_copy.return_value = {"casa_image": True, "casa_audio": True, "perro_image": True, "perro_audio": True, "libro_image": True, "libro_audio": True}
+        mock_copy.return_value = {
+            "casa_image": True,
+            "casa_audio": True,
+            "perro_image": True,
+            "perro_audio": True,
+            "libro_image": True,
+            "libro_audio": True,
+        }
         result = export_cloze_cards_to_anki(session, cloze_config)
 
     assert result is True
@@ -269,10 +293,10 @@ def test_export_cloze_cards_multiple_cards(cloze_config, tmp_path):
     csv_path = tmp_path / "anki_import_cloze.csv"
     with open(csv_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
-    
+
     # Should have headers + 3 data rows (multiple header lines in Anki format)
     assert len(lines) == 8  # 5 header lines + 3 data rows
-    
+
     # Check that all words are present
     content = "".join(lines)
     for word in ["casa", "perro", "libro"]:
@@ -280,7 +304,9 @@ def test_export_cloze_cards_multiple_cards(cloze_config, tmp_path):
         assert "______" in content  # Check that blanking is present
 
 
-def test_export_cloze_cards_error_handling(session_with_cloze_cards, cloze_config, tmp_path):
+def test_export_cloze_cards_error_handling(
+    session_with_cloze_cards, cloze_config, tmp_path
+):
     """Test export error handling."""
     cloze_config.anki_media_path = tmp_path / "collection_media"
     session_with_cloze_cards.output_directory = tmp_path
@@ -296,7 +322,7 @@ def test_export_cloze_cards_error_handling(session_with_cloze_cards, cloze_confi
 
     with patch("cloze_export.copy_cloze_media_files") as mock_copy:
         mock_copy.return_value = {"casa_image": True, "casa_audio": True}
-        
+
         # Make the output directory read-only to trigger an error
         tmp_path.chmod(0o444)
 

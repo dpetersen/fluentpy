@@ -57,14 +57,14 @@ async def create_session(
     # Create analysis tasks for all words (respecting concurrency limit)
     analysis_tasks = []
     all_inputs = []
-    
+
     # Add vocabulary word tasks
     for word_input in vocabulary_inputs:
         analysis_tasks.append(
             analyze_word_with_limit(word_input.word, request_examples=False)
         )
         all_inputs.append((word_input, "vocabulary"))
-    
+
     # Add cloze word tasks
     for word_input in cloze_inputs:
         analysis_tasks.append(
@@ -211,7 +211,9 @@ async def generate_media_for_session(session: Session) -> None:
 
 
 async def regenerate_image(
-    session: Session, card: Union[WordCard, ClozeCard], additional_prompt: str | None = None
+    session: Session,
+    card: Union[WordCard, ClozeCard],
+    additional_prompt: str | None = None,
 ) -> bool:
     """Regenerate image for a specific card, optionally with additional prompt context."""
     logger.info("Regenerating image", word=card.word)
