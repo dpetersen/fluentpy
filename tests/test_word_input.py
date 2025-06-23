@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from models import WordInput
-from word_input import get_word_inputs, get_words_from_list
+from word_input import get_all_word_inputs, get_words_from_list
 
 
 class TestGetWordInputs:
@@ -17,11 +17,13 @@ class TestGetWordInputs:
                 "hola",  # word
                 "",  # personal context (empty)
                 "",  # extra image prompt (empty)
-                "",  # next word (finish)
+                "",  # next word (finish vocabulary)
+                "",  # next word (finish cloze)
             ]
         )
 
-        result = await get_word_inputs()
+        vocabulary, cloze = await get_all_word_inputs()
+        result = vocabulary
 
         assert len(result) == 1
         assert result[0].word == "hola"
@@ -37,11 +39,13 @@ class TestGetWordInputs:
                 "correr",  # word
                 "I run every morning",  # personal context
                 "person running in sunny park",  # extra image prompt
-                "",  # next word (finish)
+                "",  # next word (finish vocabulary)
+                "",  # next word (finish cloze)
             ]
         )
 
-        result = await get_word_inputs()
+        vocabulary, cloze = await get_all_word_inputs()
+        result = vocabulary
 
         assert len(result) == 1
         assert result[0].word == "correr"
@@ -60,11 +64,13 @@ class TestGetWordInputs:
                 "perro",  # word 2
                 "",  # no context 2
                 "golden retriever",  # image prompt 2
-                "",  # finish
+                "",  # finish vocabulary
+                "",  # finish cloze
             ]
         )
 
-        result = await get_word_inputs()
+        vocabulary, cloze = await get_all_word_inputs()
+        result = vocabulary
 
         assert len(result) == 2
         assert result[0].word == "gato"
@@ -83,11 +89,13 @@ class TestGetWordInputs:
                 "  CASA  ",  # word with spaces and caps
                 "  My home  ",  # context with spaces
                 "  ",  # whitespace-only image prompt
-                "",  # finish
+                "",  # finish vocabulary
+                "",  # finish cloze
             ]
         )
 
-        result = await get_word_inputs()
+        vocabulary, cloze = await get_all_word_inputs()
+        result = vocabulary
 
         assert len(result) == 1
         assert result[0].word == "casa"

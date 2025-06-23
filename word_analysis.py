@@ -13,13 +13,38 @@ Analyze the Spanish word '{word}' and provide the following information in JSON 
 2. Part of speech (one of: noun, verb, adjective, adverb, pronoun, preposition, conjunction, article, interjection)
 3. Gender (for nouns only: masculine or feminine, otherwise null)
 4. Verb type (for verbs only: transitive, intransitive, reflexive, or pronominal, otherwise null)
+Return ONLY valid JSON with this structure (no markdown formatting, no code blocks):
+{{
+  "ipa": "string",
+  "part_of_speech": "string",
+  "gender": "string or null",
+  "verb_type": "string or null",
+  "example_sentences": []
+}}
+"""
+
+INPUT_TEMPLATE_WITH_EXAMPLES = """
+Analyze the Spanish word '{word}' and provide the following information in JSON format:
+
+1. IPA pronunciation (broken down by syllable using dots (.) for syllable boundaries and ˈ to indicate primary stress)
+2. Part of speech (one of: noun, verb, adjective, adverb, pronoun, preposition, conjunction, article, interjection)
+3. Gender (for nouns only: masculine or feminine, otherwise null)
+4. Verb type (for verbs only: transitive, intransitive, reflexive, or pronominal, otherwise null)
+Additionally, provide exactly 10 example sentences that demonstrate the word '{word}' in context. Requirements:
+- Each sentence MUST include the exact word '{word}' or its conjugated/inflected forms
+- Use beginner to intermediate vocabulary to keep focus on the target word
+- Use idiomatic Mexican Spanish expressions and phrasing
+- For verbs: include variety of conjugations (yo, tú, él/ella, nosotros, etc.) plus at least one infinitive usage (e.g., "puedo hablar")
+- Keep sentences practical and conversational
+- Each sentence should be 6-12 words long for clarity
 
 Return ONLY valid JSON with this structure (no markdown formatting, no code blocks):
 {{
   "ipa": "string",
   "part_of_speech": "string",
   "gender": "string or null",
-  "verb_type": "string or null"
+  "verb_type": "string or null",
+  "example_sentences": ["sentence1", "sentence2", ...]
 }}
 """
 
@@ -29,14 +54,22 @@ class WordAnalysis(TypedDict):
     part_of_speech: str
     gender: str | None
     verb_type: str | None
+    example_sentences: list[str]
 
 
-async def analyze_word(*, client: AsyncOpenAI, word: str) -> WordAnalysis:
-    logger.debug("Analyzing word", word=word)
+async def analyze_word(
+    *, client: AsyncOpenAI, word: str, request_examples: bool = False
+) -> WordAnalysis:
+    logger.debug(
+        "Analyzing word", word=word, request_examples=request_examples
+    )
+    
+    template = INPUT_TEMPLATE_WITH_EXAMPLES if request_examples else INPUT_TEMPLATE
+    
     response = await client.responses.create(
         model=MODEL,
         instructions=INSTRUCTIONS,
-        input=INPUT_TEMPLATE.format(word=word),
+        input=template.format(word=word),
     )
     logger.debug("Analysis received", word=word, response=response.output_text)
 
@@ -47,6 +80,7 @@ async def analyze_word(*, client: AsyncOpenAI, word: str) -> WordAnalysis:
             part_of_speech=analysis_data["part_of_speech"],
             gender=analysis_data.get("gender"),
             verb_type=analysis_data.get("verb_type"),
+            example_sentences=analysis_data.get("example_sentences", []),
         )
     except (json.JSONDecodeError, KeyError) as e:
         logger.error("Failed to parse analysis response", word=word, error=str(e))

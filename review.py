@@ -5,7 +5,8 @@ import questionary
 from loguru import logger
 
 from images import view_image
-from models import Session, WordCard
+from models import Session, WordCard, ClozeCard
+from typing import Union
 from session import regenerate_audio, regenerate_image
 
 
@@ -26,10 +27,11 @@ async def review_session(session: Session) -> None:
         )
 
         # Let user choose which card to review
-        card_choices = [
-            f"{card.word} - {card.ipa} ({card.part_of_speech})"
-            for card in incomplete_cards
-        ]
+        card_choices = []
+        for card in incomplete_cards:
+            card_type_indicator = "🧩" if isinstance(card, ClozeCard) else "📚"
+            choice_text = f"{card_type_indicator} {card.word} - {card.ipa} ({card.part_of_speech})"
+            card_choices.append(choice_text)
 
         if len(card_choices) == 1:
             # Only one card left, review it automatically
@@ -43,19 +45,57 @@ async def review_session(session: Session) -> None:
             selected_index = card_choices.index(choice)
             selected_card = incomplete_cards[selected_index]
 
+        # Handle sentence selection for Cloze cards before review
+        if isinstance(selected_card, ClozeCard) and not selected_card.selected_sentence:
+            await select_sentence_for_cloze_card(selected_card)
+        
         # Review the selected card
         await review_card(session, selected_card)
 
     logger.info("All cards approved! Session review complete.")
 
 
-async def review_card(session: Session, card: WordCard) -> None:
+async def select_sentence_for_cloze_card(card: ClozeCard) -> None:
+    """Let user select one sentence from the example sentences for a Cloze card."""
+    logger.info("Starting sentence selection", word=card.word, sentence_count=len(card.example_sentences))
+    
+    print(f"\n🧩 Choose a sentence for '{card.word}':")
+    
+    # Create sentence choices for questionary
+    sentence_choices = []
+    for i, sentence in enumerate(card.example_sentences, 1):
+        sentence_choices.append(f"{i}. {sentence}")
+    
+    # Let user select a sentence
+    choice = await questionary.select(
+        "Select a sentence:",
+        choices=sentence_choices
+    ).ask_async()
+    
+    # Extract the selected sentence (remove the number prefix)
+    selected_index = int(choice.split(".", 1)[0]) - 1
+    selected_sentence = card.example_sentences[selected_index]
+    card.selected_sentence = selected_sentence
+    
+    logger.info(
+        "Sentence selected", 
+        word=card.word, 
+        selected_sentence=selected_sentence,
+        index=selected_index + 1
+    )
+    
+    print(f"✅ Selected: {selected_sentence}")
+    print()
+
+
+async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> None:
     """Review a single card and allow user to approve or regenerate media."""
-    logger.info("Reviewing card", word=card.word)
+    logger.info("Reviewing card", word=card.word, card_type=card.card_type)
 
     # Display card information
-    print(f"\n{'=' * 50}")
-    print(f"Word: {card.word}")
+    print(f"\n{'=' * 60}")
+    card_type_icon = "🧩" if isinstance(card, ClozeCard) else "📚"
+    print(f"{card_type_icon} {card.card_type.title()} Card: {card.word}")
     print(f"IPA: {card.ipa}")
     print(f"Part of speech: {card.part_of_speech}")
     if card.gender:
@@ -66,7 +106,17 @@ async def review_card(session: Session, card: WordCard) -> None:
         print(f"Personal context: {card.personal_context}")
     if card.extra_image_prompt:
         print(f"Extra image prompt: {card.extra_image_prompt}")
-    print(f"{'=' * 50}")
+    
+    # Show Cloze-specific information
+    if isinstance(card, ClozeCard):
+        if card.definitions:
+            print(f"Definitions: {card.definitions}")
+        if card.selected_sentence:
+            print(f"Selected sentence: {card.selected_sentence}")
+        else:
+            print("⚠️  No sentence selected yet")
+    
+    print(f"{'=' * 60}")
 
     # Display generated media
     await display_card_media(card)
@@ -74,6 +124,10 @@ async def review_card(session: Session, card: WordCard) -> None:
     # Review loop for this card
     while True:
         actions = ["✅ Approve this card"]
+
+        # Add sentence reselection for Cloze cards
+        if isinstance(card, ClozeCard):
+            actions.append("🔄 Change selected sentence")
 
         if card.image_path:
             actions.append("🖼️  Regenerate image")
@@ -88,9 +142,16 @@ async def review_card(session: Session, card: WordCard) -> None:
         ).ask_async()
 
         if action.startswith("✅"):
+            # Check if Cloze card has sentence selected before approving
+            if isinstance(card, ClozeCard) and not card.selected_sentence:
+                print("❌ Cannot approve Cloze card without selecting a sentence first.")
+                continue
             card.mark_complete()
             logger.info("Card approved", word=card.word)
             break
+        elif action.startswith("🔄"):
+            if isinstance(card, ClozeCard):
+                await select_sentence_for_cloze_card(card)
         elif action.startswith("🖼️"):
             await handle_image_regeneration(session, card)
         elif action.startswith("🔊"):
@@ -99,9 +160,9 @@ async def review_card(session: Session, card: WordCard) -> None:
             await handle_audio_replay(card)
 
 
-async def display_card_media(card: WordCard) -> None:
+async def display_card_media(card: Union[WordCard, ClozeCard]) -> None:
     """Display the generated media for a card."""
-    if card.image_path and card.image_path.exists():
+    if card.image_path and Path(card.image_path).exists():
         try:
             print(f"\nDisplaying image: {card.image_path}")
             view_image(str(card.image_path))
@@ -111,14 +172,14 @@ async def display_card_media(card: WordCard) -> None:
     else:
         print("❌ No image available")
 
-    if card.audio_path and card.audio_path.exists():
+    if card.audio_path and Path(card.audio_path).exists():
         print(f"🔊 Playing audio: {card.audio_path}")
-        play_audio(card.audio_path)
+        play_audio(Path(card.audio_path))
     else:
         print("❌ No audio available")
 
 
-async def handle_image_regeneration(session: Session, card: WordCard) -> None:
+async def handle_image_regeneration(session: Session, card: Union[WordCard, ClozeCard]) -> None:
     """Handle user request to regenerate image with optional additional context."""
     print(f"\nRegenerating image for '{card.word}'...")
 
@@ -148,7 +209,7 @@ async def handle_image_regeneration(session: Session, card: WordCard) -> None:
         print("❌ Image regeneration failed. Please try again.")
 
 
-async def handle_audio_regeneration(session: Session, card: WordCard) -> None:
+async def handle_audio_regeneration(session: Session, card: Union[WordCard, ClozeCard]) -> None:
     """Handle user request to regenerate audio."""
     print(f"\nRegenerating audio for '{card.word}'...")
 
@@ -160,16 +221,16 @@ async def handle_audio_regeneration(session: Session, card: WordCard) -> None:
         print("✅ Audio regenerated successfully!")
         if card.audio_path:
             print(f"🔊 New audio: {card.audio_path}")
-            play_audio(card.audio_path)
+            play_audio(Path(card.audio_path))
     else:
         print("❌ Audio regeneration failed. Please try again.")
 
 
-async def handle_audio_replay(card: WordCard) -> None:
+async def handle_audio_replay(card: Union[WordCard, ClozeCard]) -> None:
     """Handle user request to replay audio."""
-    if card.audio_path and card.audio_path.exists():
+    if card.audio_path and Path(card.audio_path).exists():
         print(f"\n🔈 Replaying audio for '{card.word}'...")
-        play_audio(card.audio_path)
+        play_audio(Path(card.audio_path))
     else:
         print("❌ No audio available to replay")
 

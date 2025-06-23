@@ -49,7 +49,7 @@ def find_anki_collection_media() -> Path | None:
 
 
 class AnkiConfig:
-    """Configuration for Anki export settings."""
+    """Configuration for Anki export settings for vocabulary cards."""
 
     # Note type configuration
     NOTE_TYPE = "2. Picture Words"
@@ -96,6 +96,72 @@ class AnkiConfig:
         self.deck_name = deck_name or self.DECK_NAME
         self.anki_media_path = anki_media_path or find_anki_collection_media()
         self.test_spelling = test_spelling
+
+    def get_spanish_part_of_speech(self, part_of_speech: str) -> str:
+        """Get Spanish term for part of speech."""
+        return self.SPANISH_PARTS_OF_SPEECH.get(part_of_speech, part_of_speech.title())
+
+    def get_spanish_gender(self, gender: str | None) -> str:
+        """Get Spanish term for gender."""
+        if not gender:
+            return ""
+        return self.SPANISH_GENDER.get(gender, gender)
+
+    def get_spanish_verb_type(self, verb_type: str | None) -> str:
+        """Get Spanish term for verb type."""
+        if not verb_type:
+            return ""
+        return self.SPANISH_VERB_TYPES.get(verb_type, verb_type)
+
+
+class ClozeAnkiConfig:
+    """Configuration for Anki export settings for Cloze cards."""
+
+    # Note type configuration
+    NOTE_TYPE = "3. All-Purpose Card"
+    DECK_NAME = "FluentPy Test"
+
+    # Field configuration - exact field names including "- " prefixes
+    FIELD_NAMES = [
+        "Front (Example with word blanked out or missing)",
+        "Front (Picture)",
+        "Front (Definitions, base word, etc.)",
+        "Back (a single word/phrase, no context)",
+        "- The full sentence (no words blanked out)",
+        "- Extra Info (Pronunciation, personal connections, conjugations, etc)",
+    ]
+
+    # Spanish grammar terms (same as AnkiConfig)
+    SPANISH_PARTS_OF_SPEECH = {
+        "noun": "Sustantivo",
+        "verb": "Verbo",
+        "adjective": "Adjetivo",
+        "adverb": "Adverbio",
+        "pronoun": "Pronombre",
+        "preposition": "Preposición",
+        "conjunction": "Conjunción",
+        "article": "Artículo",
+        "interjection": "Interjección",
+    }
+
+    SPANISH_GENDER = {"masculine": "masculino", "feminine": "femenino"}
+
+    SPANISH_VERB_TYPES = {
+        "transitive": "transitivo",
+        "intransitive": "intransitivo",
+        "reflexive": "reflexivo",
+        "pronominal": "pronominal",
+    }
+
+    def __init__(
+        self,
+        deck_name: str | None = None,
+        anki_media_path: Path | None = None,
+        guid_column: int = 6,
+    ):
+        self.deck_name = deck_name or self.DECK_NAME
+        self.anki_media_path = anki_media_path or find_anki_collection_media()
+        self.guid_column = guid_column  # Cloze cards don't use GUID for duplicate prevention
 
     def get_spanish_part_of_speech(self, part_of_speech: str) -> str:
         """Get Spanish term for part of speech."""

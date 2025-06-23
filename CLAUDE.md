@@ -15,6 +15,15 @@ The user created this tool to solve specific problems with Spanish language lear
 4. **Anki integration**: Seamlessly exports to the user's existing "2. Picture Words" note type
 5. **Batch processing efficiency**: Handle multiple words in one session rather than one-at-a-time workflow
 
+### Learning Philosophy: Immersion-Based Learning
+**CRITICAL**: This tool follows immersion-based learning principles. All flashcard content is in Spanish only - no English translations are used in the final cards. Learning occurs through:
+- **Visual associations** (images that represent the concept)
+- **Audio pronunciation** (native Mexican Spanish)
+- **Context** (example sentences in Spanish)
+- **Grammar patterns** (IPA, parts of speech in Spanish)
+
+The user learns Spanish through Spanish, not through translation. This is a core tenet of the learning methodology.
+
 ## Development Commands
 
 ### Running the Application

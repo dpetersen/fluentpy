@@ -87,14 +87,14 @@ def copy_media_files(session: Session, config: AnkiConfig) -> dict[str, bool]:
             continue
 
         # Copy image file
-        if card.image_path and card.image_path.exists():
+        if card.image_path and Path(card.image_path).exists():
             image_filename = (
                 f"{card.word.lower().replace(' ', '_')}-{card.short_id}.jpg"
             )
             dest_image = config.anki_media_path / image_filename
 
             try:
-                shutil.copy2(card.image_path, dest_image)
+                shutil.copy2(Path(card.image_path), dest_image)
                 copy_results[f"{card.word}_image"] = True
                 logger.info("Copied image to Anki", word=card.word, dest=dest_image)
             except Exception as e:
@@ -102,14 +102,14 @@ def copy_media_files(session: Session, config: AnkiConfig) -> dict[str, bool]:
                 logger.error("Failed to copy image", word=card.word, error=str(e))
 
         # Copy audio file
-        if card.audio_path and card.audio_path.exists():
+        if card.audio_path and Path(card.audio_path).exists():
             audio_filename = (
                 f"{card.word.lower().replace(' ', '_')}-{card.short_id}.mp3"
             )
             dest_audio = config.anki_media_path / audio_filename
 
             try:
-                shutil.copy2(card.audio_path, dest_audio)
+                shutil.copy2(Path(card.audio_path), dest_audio)
                 copy_results[f"{card.word}_audio"] = True
                 logger.info("Copied audio to Anki", word=card.word, dest=dest_audio)
             except Exception as e:
@@ -143,7 +143,7 @@ def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> boo
             # Write card data
             writer = csv.writer(csvfile, delimiter="\t", quoting=csv.QUOTE_MINIMAL)
 
-            for card in session.cards:
+            for card in session.vocabulary_cards:
                 if card.is_complete:
                     row = create_csv_row(card, config)
                     writer.writerow(row)

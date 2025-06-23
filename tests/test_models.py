@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from models import Session, WordCard, WordInput
+from models import ClozeCard, ClozeCardInput, Session, WordCard, WordInput
 
 
 class TestWordInput:
@@ -160,3 +160,171 @@ class TestSession:
         path = session.get_media_path(card, ".mp3")
         assert "niño_pequeño-" in str(path)
         assert str(path).endswith(".mp3")
+
+
+class TestClozeCardInput:
+    def test_create_minimal(self):
+        """Test creating ClozeCardInput with just the required word."""
+        cloze_input = ClozeCardInput(word="casa")
+        assert cloze_input.word == "casa"
+        assert cloze_input.personal_context is None
+        assert cloze_input.extra_image_prompt is None
+
+    def test_create_with_metadata(self):
+        """Test creating ClozeCardInput with all fields."""
+        cloze_input = ClozeCardInput(
+            word="estudiar",
+            personal_context="I study Spanish every day",
+            extra_image_prompt="student with books",
+        )
+        assert cloze_input.word == "estudiar"
+        assert cloze_input.personal_context == "I study Spanish every day"
+        assert cloze_input.extra_image_prompt == "student with books"
+
+
+class TestClozeCard:
+    def test_create_minimal(self):
+        """Test creating ClozeCard with minimal required fields."""
+        word_analysis = {
+            "ipa": "ˈka.sa",
+            "part_of_speech": "sustantivo",
+            "gender": "femenino",
+            "example_sentences": [
+                "La casa es grande.",
+                "Vivo en una casa.",
+                "Mi casa tiene jardín."
+            ]
+        }
+        
+        card = ClozeCard(
+            word="casa",
+            word_analysis=word_analysis,
+            selected_sentence="La casa es grande."
+        )
+        
+        assert card.word == "casa"
+        assert card.word_analysis == word_analysis
+        assert card.selected_sentence == "La casa es grande."
+        assert card.is_complete is False
+        assert card.image_path is None
+        assert card.audio_path is None
+        assert card.guid is not None
+
+    def test_create_with_full_data(self):
+        """Test creating ClozeCard with all fields."""
+        word_analysis = {
+            "ipa": "es.tu.ˈdjaɾ",
+            "part_of_speech": "verbo",
+            "gender": None,
+            "example_sentences": [
+                "Voy a estudiar español.",
+                "Ella estudia medicina.",
+                "Estudiamos juntos."
+            ]
+        }
+        
+        card = ClozeCard(
+            word="estudiar",
+            word_analysis=word_analysis,
+            selected_sentence="Voy a estudiar español.",
+            image_path="estudiar-abc123.jpg",
+            audio_path="estudiar-abc123.mp3",
+            memory_aid="Think of student with books",
+            extra_prompt="Add university setting"
+        )
+        
+        assert card.word == "estudiar"
+        assert card.selected_sentence == "Voy a estudiar español."
+        assert card.image_path == "estudiar-abc123.jpg"
+        assert card.audio_path == "estudiar-abc123.mp3"
+        assert card.memory_aid == "Think of student with books"
+        assert card.extra_prompt == "Add university setting"
+
+    def test_needs_media(self):
+        """Test needs_image and needs_audio properties."""
+        word_analysis = {
+            "ipa": "ˈpe.ro",
+            "part_of_speech": "sustantivo",
+            "gender": "masculino",
+            "example_sentences": ["El perro ladra."]
+        }
+        
+        card = ClozeCard(
+            word="perro",
+            word_analysis=word_analysis,
+            selected_sentence="El perro ladra."
+        )
+        
+        assert card.needs_image is True
+        assert card.needs_audio is True
+
+        card.image_path = "perro.jpg"
+        assert card.needs_image is False
+        assert card.needs_audio is True
+
+        card.audio_path = "perro.mp3"
+        assert card.needs_image is False
+        assert card.needs_audio is False
+
+    def test_mark_complete(self):
+        """Test marking a ClozeCard as complete."""
+        word_analysis = {
+            "ipa": "ˈli.bɾo",
+            "part_of_speech": "sustantivo",
+            "gender": "masculino",
+            "example_sentences": ["Leo un libro."]
+        }
+        
+        card = ClozeCard(
+            word="libro",
+            word_analysis=word_analysis,
+            selected_sentence="Leo un libro."
+        )
+        
+        assert card.is_complete is False
+        card.mark_complete()
+        assert card.is_complete is True
+
+    def test_guid_generation(self):
+        """Test that each ClozeCard gets a unique GUID."""
+        word_analysis1 = {
+            "ipa": "ˈa.ɣwa",
+            "part_of_speech": "sustantivo",
+            "gender": "femenino",
+            "example_sentences": ["Bebo agua."]
+        }
+        
+        word_analysis2 = {
+            "ipa": "ˈfwe.ɣo",
+            "part_of_speech": "sustantivo",
+            "gender": "masculino",
+            "example_sentences": ["El fuego es caliente."]
+        }
+        
+        card1 = ClozeCard(word="agua", word_analysis=word_analysis1, selected_sentence="Bebo agua.")
+        card2 = ClozeCard(word="fuego", word_analysis=word_analysis2, selected_sentence="El fuego es caliente.")
+
+        # Each card should have a GUID
+        assert card1.guid is not None
+        assert card2.guid is not None
+
+        # GUIDs should be different
+        assert card1.guid != card2.guid
+
+        # GUIDs should be valid UUID format (36 chars with dashes)
+        assert len(card1.guid) == 36
+        assert card1.guid.count("-") == 4
+
+    def test_short_id(self):
+        """Test short_id property returns first 8 characters of GUID."""
+        word_analysis = {
+            "ipa": "test",
+            "part_of_speech": "sustantivo",
+            "gender": "masculino",
+            "example_sentences": ["Test sentence."]
+        }
+        
+        card = ClozeCard(word="test", word_analysis=word_analysis, selected_sentence="Test sentence.")
+
+        assert len(card.short_id) == 8
+        assert card.short_id == card.guid[:8]

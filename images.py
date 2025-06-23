@@ -8,17 +8,29 @@ from word_analysis import WordAnalysis
 
 
 def _create_prompt(
-    word: str, analysis: WordAnalysis, extra_prompt: str | None = None
+    word: str, analysis: WordAnalysis, extra_prompt: str | None = None, sentence_context: str | None = None
 ) -> str:
-    base_prompt = """
-    I am making memorable Anki flashcards for Spanish vocabulary. It is absolutely 
-    critical that the word I give you, or any similar words, SHOULD NOT appear in 
-    the image. I am looking for imagery, not traditional flash cards. The style of 
-    the image can be whatever style you think best fits the word.
-    
-    I'm learning Latin American Spanish, Mexican specifically, so keep that in mind 
-    when trying to translate the terms to images.
-    """
+    if sentence_context:
+        base_prompt = """
+        I am making memorable Anki flashcards for Spanish vocabulary using sentence context. 
+        It is absolutely critical that NO TEXT or WORDS should appear in the image. 
+        I am looking for imagery that represents the scene or concept described in the sentence, 
+        not traditional flash cards. The style of the image can be whatever style you think 
+        best fits the scene.
+        
+        I'm learning Latin American Spanish, Mexican specifically, so keep that in mind 
+        when trying to translate the concepts to images.
+        """
+    else:
+        base_prompt = """
+        I am making memorable Anki flashcards for Spanish vocabulary. It is absolutely 
+        critical that the word I give you, or any similar words, SHOULD NOT appear in 
+        the image. I am looking for imagery, not traditional flash cards. The style of 
+        the image can be whatever style you think best fits the word.
+        
+        I'm learning Latin American Spanish, Mexican specifically, so keep that in mind 
+        when trying to translate the terms to images.
+        """
 
     part_of_speech = analysis["part_of_speech"]
     gender = analysis.get("gender")
@@ -55,9 +67,20 @@ def _create_prompt(
             Create a clear, memorable image that represents this concept.
             """
 
-    final_prompt = (
-        f"{base_prompt.strip()}\n\n{specific_prompt.strip()}\n\nThe word is: {word}"
-    )
+    if sentence_context:
+        # For Cloze cards with sentence context
+        final_prompt = (
+            f"{base_prompt.strip()}\n\n{specific_prompt.strip()}\n\n"
+            f"The target word is: {word}\n"
+            f"Sentence context: {sentence_context}\n\n"
+            f"Create an image that represents the scene or action described in the sentence, "
+            f"while emphasizing the concept represented by the target word."
+        )
+    else:
+        # For regular vocabulary cards
+        final_prompt = (
+            f"{base_prompt.strip()}\n\n{specific_prompt.strip()}\n\nThe word is: {word}"
+        )
 
     if extra_prompt:
         final_prompt += f"\n\nAdditional context: {extra_prompt}"
@@ -72,9 +95,15 @@ async def generate_image(
     analysis: WordAnalysis,
     path: str,
     extra_prompt: str | None = None,
+    sentence_context: str | None = None,
 ) -> str:
-    logger.debug("Generating image", word=word)
-    prompt = _create_prompt(word, analysis, extra_prompt)
+    logger.debug(
+        "Generating image", 
+        word=word, 
+        has_sentence_context=bool(sentence_context),
+        sentence=sentence_context if sentence_context else None
+    )
+    prompt = _create_prompt(word, analysis, extra_prompt, sentence_context)
     response = await client.images.generate(
         model="gpt-image-1",
         prompt=prompt,

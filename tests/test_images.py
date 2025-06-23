@@ -33,6 +33,7 @@ async def test_generate_image(openai_client):
         "part_of_speech": "interjection",
         "gender": None,
         "verb_type": None,
+        "example_sentences": [],
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -56,6 +57,7 @@ class TestCreatePrompt:
             "part_of_speech": "verb",
             "gender": None,
             "verb_type": "transitive",
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("comer", analysis)
@@ -71,6 +73,7 @@ class TestCreatePrompt:
             "part_of_speech": "adjective",
             "gender": None,
             "verb_type": None,
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("azul", analysis)
@@ -90,6 +93,7 @@ class TestCreatePrompt:
             "part_of_speech": "noun",
             "gender": "masculine",
             "verb_type": None,
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("libro", analysis)
@@ -113,6 +117,7 @@ class TestCreatePrompt:
             "part_of_speech": "noun",
             "gender": "feminine",
             "verb_type": None,
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("casa", analysis)
@@ -137,6 +142,7 @@ class TestCreatePrompt:
             "part_of_speech": "noun",
             "gender": None,
             "verb_type": None,
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("agua", analysis)
@@ -166,6 +172,7 @@ class TestCreatePrompt:
             "part_of_speech": "interjection",
             "gender": None,
             "verb_type": None,
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("hola", analysis)
@@ -182,6 +189,7 @@ class TestCreatePrompt:
             "part_of_speech": "verb",
             "gender": None,
             "verb_type": None,
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("test", analysis)
@@ -201,6 +209,7 @@ class TestCreatePrompt:
             "part_of_speech": "noun",
             "gender": "feminine",
             "verb_type": None,
+            "example_sentences": [],
         }
 
         extra_prompt = "make it colorful with bright flowers"
@@ -221,6 +230,7 @@ class TestCreatePrompt:
             "part_of_speech": "noun",
             "gender": "feminine",
             "verb_type": None,
+            "example_sentences": [],
         }
 
         prompt = _create_prompt("casa", analysis)
