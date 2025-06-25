@@ -198,6 +198,7 @@ The user specifically chose a terminal interface over GUI for simplicity and spe
 
 ### Desired Future Functionality
 
+- Allow specifying my own example sentence for cloze.
 - Create multiple images per prompt and choose one
 - Automatic translation of personal notes, optionally
 - Periodic deck backups to S3
