@@ -30,7 +30,11 @@ async def review_session(session: Session) -> None:
         card_choices = []
         for card in incomplete_cards:
             card_type_indicator = "🧩" if isinstance(card, ClozeCard) else "📚"
-            choice_text = f"{card_type_indicator} {card.word} - {card.ipa} ({card.part_of_speech})"
+            # For Cloze cards with selected sentences, show the word form instead of base word
+            display_word = card.word
+            if isinstance(card, ClozeCard) and card.selected_word_form:
+                display_word = f"{card.selected_word_form} ({card.word})"
+            choice_text = f"{card_type_indicator} {display_word} - {card.ipa} ({card.part_of_speech})"
             card_choices.append(choice_text)
 
         if len(card_choices) == 1:
@@ -132,7 +136,13 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
     # Display card information
     print(f"\n{'=' * 60}")
     card_type_icon = "🧩" if isinstance(card, ClozeCard) else "📚"
-    print(f"{card_type_icon} {card.card_type.title()} Card: {card.word}")
+
+    # For Cloze cards, show the word form if available
+    display_word = card.word
+    if isinstance(card, ClozeCard) and card.selected_word_form:
+        display_word = f"{card.selected_word_form} (from {card.word})"
+
+    print(f"{card_type_icon} {card.card_type.title()} Card: {display_word}")
     print(f"IPA: {card.ipa}")
     print(f"Part of speech: {card.part_of_speech}")
     if card.gender:
@@ -337,7 +347,12 @@ def show_session_summary(session: Session) -> None:
         if card.audio_path:
             media_status.append("🔊")
 
-        print(f"  {status} {card.word} ({card.ipa}) {' '.join(media_status)}")
+        # Show word form for Cloze cards with selected sentences
+        display_word = card.word
+        if isinstance(card, ClozeCard) and card.selected_word_form:
+            display_word = f"{card.selected_word_form} ({card.word})"
+
+        print(f"  {status} {display_word} ({card.ipa}) {' '.join(media_status)}")
 
     print(f"\nAll media files are saved in: {session.output_directory}")
     print("Ready for Anki export!")

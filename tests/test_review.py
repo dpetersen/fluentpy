@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from models import Session, WordCard
+from models import Session, WordCard, ClozeCard
 from review import (
     display_card_media,
     handle_audio_regeneration,
@@ -370,3 +370,29 @@ class TestShowSessionSummary:
 
         # Should not raise exception
         show_session_summary(session)
+
+    def test_displays_cloze_cards_with_word_forms(self):
+        """Test that Cloze cards display word forms in summary."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            session = Session(output_directory=Path(tmpdir))
+
+            # Add Cloze card with selected word form
+            word_analysis = {
+                "ipa": "aˈβlaɾ",
+                "part_of_speech": "verb",
+                "gender": None,
+                "verb_type": "transitive",
+                "example_sentences": [],
+            }
+            cloze_card = ClozeCard(
+                word="hablar",
+                word_analysis=word_analysis,
+                selected_sentence="Ella habla español",
+                selected_word_form="habla",
+            )
+            cloze_card.mark_complete()
+
+            session.add_card(cloze_card)
+
+            # Should not raise exception
+            show_session_summary(session)
