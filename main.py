@@ -8,7 +8,7 @@ from loguru import logger
 from anki_export import export_to_anki
 from cloze_export import export_cloze_cards_to_anki
 from config import AnkiConfig, ClozeAnkiConfig
-from review import review_session, show_session_summary, select_sentence_for_cloze_card
+from review import review_session, show_session_summary, select_sentences_for_cloze_card
 from session import create_session, generate_media_for_session
 from word_input import get_all_word_inputs
 
@@ -80,16 +80,46 @@ async def main():
         return
 
     # Step 2.5: Select sentences for Cloze cards before media generation
-    cloze_cards = session.cloze_cards
+    cloze_cards = session.cloze_cards.copy()  # Copy the list as we'll be modifying it
     if cloze_cards:
-        print(f"\n🧩 Selecting sentences for {len(cloze_cards)} Cloze cards...")
-        print("Choose one sentence for each word to create fill-in-the-blank cards:")
+        print(f"\n🧩 Selecting sentences for {len(cloze_cards)} Cloze word(s)...")
+        print("Choose one or more sentences for each word to create multiple cards:")
         print()
 
         try:
+            # Clear the session's cloze cards list as we'll rebuild it with expanded cards
+            session.cloze_cards.clear()
+
             for card in cloze_cards:
-                await select_sentence_for_cloze_card(card)
-            logger.info("Sentence selection completed for all Cloze cards")
+                selected_sentences = await select_sentences_for_cloze_card(card)
+
+                # Create cards for each selected sentence
+                for i, (sentence, word_form) in enumerate(selected_sentences):
+                    if i == 0:
+                        # Update the original card with the first sentence
+                        card.selected_sentence = sentence
+                        card.selected_word_form = word_form
+                        session.add_card(card)
+                    else:
+                        # Create duplicate cards for additional sentences
+                        new_card = card.create_duplicate_with_sentence(
+                            sentence, word_form
+                        )
+                        session.add_card(new_card)
+                        logger.info(
+                            "Created additional card",
+                            word=new_card.word,
+                            sentence=sentence,
+                            guid=new_card.guid,
+                        )
+
+            total_cloze_cards = len(session.cloze_cards)
+            print(
+                f"✅ Created {total_cloze_cards} Cloze cards from {len(cloze_cards)} word(s)"
+            )
+            logger.info(
+                "Sentence selection completed", total_cloze_cards=total_cloze_cards
+            )
         except Exception as e:
             logger.error("Failed during sentence selection", error=str(e))
             print(f"❌ Error selecting sentences: {e}")

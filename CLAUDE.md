@@ -78,7 +78,9 @@ The codebase follows a modular architecture with clear separation of concerns, i
 3. **`models.py`**: Core data structures with UUID integration
    - `WordInput`: Raw user input with word and optional metadata
    - `WordCard`: Complete card with analysis, media paths, and UUID for collision prevention
+   - `ClozeCard`: Cloze card with sentence selection support
    - `Session`: Container for cards with output directory management
+   - `ClozeCard.create_duplicate_with_sentence()`: Creates new cards from additional sentence selections
 
 4. **`session.py`**: Session state management and media generation
    - `create_session()`: Analyzes words and creates WordCard objects
@@ -88,6 +90,8 @@ The codebase follows a modular architecture with clear separation of concerns, i
 5. **`review.py`**: Interactive media review system
    - Displays generated media in terminal (images via term-image)
    - Allows approval, image regeneration with additional context, audio regeneration
+   - `select_sentences_for_cloze_card()`: Multi-select interface for choosing sentences
+   - Supports creating multiple cloze cards from different conjugations/sentences
    - Tracks completion state until all cards approved
 
 6. **`anki_export.py`**: CSV generation and media file management
@@ -99,6 +103,8 @@ The codebase follows a modular architecture with clear separation of concerns, i
 
 7. **`word_analysis.py`**: Grammatical analysis and IPA generation
    - Uses OpenAI GPT-4o for Spanish word analysis (IPA, part of speech, gender, verb type)
+   - Generates 15 example sentences for cloze cards with different conjugations and tenses
+   - For verbs: includes present, preterite, imperfect, future, conditional, and subjunctive forms
    - Returns structured `WordAnalysis` dictionary for consistent data handling
 
 8. **`images.py`**: Image generation with specialized prompts
@@ -144,6 +150,13 @@ User prefers Spanish grammar terms over English in Anki fields:
 
 ### Async Architecture Considerations
 **Critical**: All questionary interactions must use `.ask_async()` not `.ask()` to prevent asyncio event loop conflicts. This was a major debugging issue that required updating all user interaction code.
+
+### Multi-Card Generation for Cloze Cards
+Users can select multiple sentences when creating cloze cards, particularly useful for verbs with different conjugations:
+- During cloze card creation, a checkbox interface allows selecting multiple sentences
+- Each selected sentence generates a separate card with unique GUID and media
+- First selection updates the original card, additional selections create duplicates
+- Each card gets context-specific image and audio based on its sentence
 
 ## Key Patterns
 
@@ -199,7 +212,6 @@ The user specifically chose a terminal interface over GUI for simplicity and spe
 ### Desired Future Functionality
 
 - Allow specifying my own example sentence for cloze.
-- Allow choosing multiple sentences. Useful for verbs. These should fan out into multiple cards.
 - Create multiple images per prompt and choose one
 - Automatic translation of personal notes, optionally
 - Periodic deck backups to S3

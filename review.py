@@ -47,7 +47,11 @@ async def review_session(session: Session) -> None:
 
         # Handle sentence selection for Cloze cards before review
         if isinstance(selected_card, ClozeCard) and not selected_card.selected_sentence:
-            await select_sentence_for_cloze_card(selected_card)
+            selected_sentences = await select_sentences_for_cloze_card(selected_card)
+            if selected_sentences:
+                # Use the first selected sentence for this card
+                selected_card.selected_sentence = selected_sentences[0][0]
+                selected_card.selected_word_form = selected_sentences[0][1]
 
         # Review the selected card
         await review_card(session, selected_card)
@@ -55,46 +59,70 @@ async def review_session(session: Session) -> None:
     logger.info("All cards approved! Session review complete.")
 
 
-async def select_sentence_for_cloze_card(card: ClozeCard) -> None:
-    """Let user select one sentence from the example sentences for a Cloze card."""
+async def select_sentences_for_cloze_card(card: ClozeCard) -> list[tuple[str, str]]:
+    """Let user select one or more sentences from the example sentences for Cloze cards.
+
+    Returns a list of tuples (sentence, word_form) for each selected sentence.
+    """
     logger.info(
         "Starting sentence selection",
         word=card.word,
         sentence_count=len(card.example_sentences),
     )
 
-    print(f"\n🧩 Choose a sentence for '{card.word}':")
+    print(f"\n🧩 Choose sentences for '{card.word}':")
+    print("(Select one or more sentences to create multiple cards)")
 
     # Create sentence choices for questionary
     sentence_choices = []
     for i, sentence_data in enumerate(card.example_sentences, 1):
         sentence_text = sentence_data["sentence"]
         word_form = sentence_data["word_form"]
-        sentence_choices.append(f"{i}. {sentence_text} (uses: {word_form})")
+        sentence_choices.append(
+            {
+                "name": f"{i}. {sentence_text} (uses: {word_form})",
+                "value": i - 1,  # Store the index for easy lookup
+            }
+        )
 
-    # Let user select a sentence
-    choice = await questionary.select(
-        "Select a sentence:", choices=sentence_choices
+    # Let user select multiple sentences
+    selected_indices = await questionary.checkbox(
+        "Select sentences (space to select, enter to confirm):",
+        choices=sentence_choices,
     ).ask_async()
 
-    # Extract the selected sentence (remove the number prefix)
-    selected_index = int(choice.split(".", 1)[0]) - 1
-    sentence_data = card.example_sentences[selected_index]
+    if not selected_indices:
+        # If no selection, prompt to select at least one
+        print("⚠️  Please select at least one sentence.")
+        selected_index = await questionary.select(
+            "Select a sentence:",
+            choices=[choice["name"] for choice in sentence_choices],
+        ).ask_async()
+        # Extract index from the selection
+        selected_indices = [int(selected_index.split(".", 1)[0]) - 1]
 
-    card.selected_sentence = sentence_data["sentence"]
-    card.selected_word_form = sentence_data["word_form"]
+    # Extract selected sentences
+    selected_sentences = []
+    for index in selected_indices:
+        sentence_data = card.example_sentences[index]
+        selected_sentences.append(
+            (sentence_data["sentence"], sentence_data["word_form"])
+        )
 
-    logger.info(
-        "Sentence selected",
-        word=card.word,
-        selected_sentence=sentence_data["sentence"],
-        word_form=sentence_data["word_form"],
-        index=selected_index + 1,
-    )
+        logger.info(
+            "Sentence selected",
+            word=card.word,
+            selected_sentence=sentence_data["sentence"],
+            word_form=sentence_data["word_form"],
+            index=index + 1,
+        )
 
-    print(f"✅ Selected: {sentence_data['sentence']}")
-    print(f"   Word form used: {sentence_data['word_form']}")
+    print(f"\n✅ Selected {len(selected_sentences)} sentence(s):")
+    for sentence, word_form in selected_sentences:
+        print(f"   • {sentence} (uses: {word_form})")
     print()
+
+    return selected_sentences
 
 
 async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> None:
@@ -162,7 +190,11 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
             break
         elif action.startswith("🔄"):
             if isinstance(card, ClozeCard):
-                await select_sentence_for_cloze_card(card)
+                selected_sentences = await select_sentences_for_cloze_card(card)
+                if selected_sentences:
+                    # Update the card with the first selected sentence
+                    card.selected_sentence = selected_sentences[0][0]
+                    card.selected_word_form = selected_sentences[0][1]
         elif action.startswith("🖼️"):
             await handle_image_regeneration(session, card)
         elif action.startswith("🔊"):

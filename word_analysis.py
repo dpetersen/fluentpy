@@ -30,11 +30,11 @@ Analyze the Spanish word '{word}' and provide the following information in JSON 
 2. Part of speech (one of: noun, verb, adjective, adverb, pronoun, preposition, conjunction, article, interjection)
 3. Gender (for nouns only: masculine or feminine, otherwise null)
 4. Verb type (for verbs only: transitive, intransitive, reflexive, or pronominal, otherwise null)
-Additionally, provide exactly 10 example sentences that demonstrate the word '{word}' in context. Requirements:
+Additionally, provide exactly 15 example sentences that demonstrate the word '{word}' in context. Requirements:
 - Each sentence MUST include the exact word '{word}' or its conjugated/inflected forms
 - Use beginner to intermediate vocabulary to keep focus on the target word
 - Use idiomatic Mexican Spanish expressions and phrasing
-- For verbs: include variety of conjugations (yo, tú, él/ella, nosotros, etc.) plus at least one infinitive usage (e.g., "puedo hablar")
+- For verbs: include variety of conjugations (yo, tú, él/ella, nosotros, etc.) AND various tenses (present, preterite, imperfect, future, conditional, present subjunctive) plus at least one infinitive usage (e.g., "puedo hablar")
 - Keep sentences practical and conversational
 - Each sentence should be 6-12 words long for clarity
 - CRITICAL: For each sentence, the "word_form" field must contain the EXACT form of the word that appears in the sentence text. The sentence text must contain this exact word_form identically - character for character, case for case.

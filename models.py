@@ -129,6 +129,26 @@ class ClozeCard:
     def extra_image_prompt(self) -> str | None:
         return self.extra_prompt
 
+    def create_duplicate_with_sentence(
+        self, sentence: str, word_form: str
+    ) -> "ClozeCard":
+        """Create a new ClozeCard with the same base data but different sentence."""
+        return ClozeCard(
+            word=self.word,
+            word_analysis=self.word_analysis.copy(),
+            selected_sentence=sentence,
+            selected_word_form=word_form,
+            personal_context=self.personal_context,
+            extra_prompt=self.extra_prompt,
+            memory_aid=self.memory_aid,
+            # New card gets new GUID and no media paths
+            guid=str(uuid.uuid4()),
+            image_path=None,
+            audio_path=None,
+            is_complete=False,
+            card_type=self.card_type,
+        )
+
 
 @dataclass
 class Session:
