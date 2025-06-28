@@ -69,10 +69,10 @@ async def review_session(session: Session) -> None:
 
 async def select_sentences_for_cloze_card(
     card: ClozeCard,
-) -> list[tuple[str, str, str | None]]:
+) -> list[tuple[str, str, str, str | None]]:
     """Let user select one or more sentences from the example sentences for Cloze cards.
 
-    Returns a list of tuples (sentence, word_form, tense) for each selected sentence.
+    Returns a list of tuples (sentence, word_form, ipa, tense) for each selected sentence.
     """
     logger.info(
         "Starting sentence selection",
@@ -88,11 +88,14 @@ async def select_sentences_for_cloze_card(
     for i, sentence_data in enumerate(card.example_sentences, 1):
         sentence_text = sentence_data["sentence"]
         word_form = sentence_data["word_form"]
+        ipa = sentence_data.get("ipa", "")
         tense = sentence_data.get("tense")
 
         # Build the display text with tense information
         display_parts = [f"{i}. {sentence_text}"]
         info_parts = [f"uses: {word_form}"]
+        if ipa:
+            info_parts.append(f"IPA: {ipa}")
         if tense:
             info_parts.append(f"tense: {tense}")
         display_parts.append(f"({', '.join(info_parts)})")
@@ -125,8 +128,9 @@ async def select_sentences_for_cloze_card(
     for index in selected_indices:
         sentence_data = card.example_sentences[index]
         tense = sentence_data.get("tense")
+        ipa = sentence_data.get("ipa", "")
         selected_sentences.append(
-            (sentence_data["sentence"], sentence_data["word_form"], tense)
+            (sentence_data["sentence"], sentence_data["word_form"], ipa, tense)
         )
 
         logger.info(
@@ -139,7 +143,7 @@ async def select_sentences_for_cloze_card(
         )
 
     print(f"\n✅ Selected {len(selected_sentences)} sentence(s):")
-    for sentence, word_form, tense in selected_sentences:
+    for sentence, word_form, ipa, tense in selected_sentences:
         info_parts = [f"uses: {word_form}"]
         if tense:
             info_parts.append(f"tense: {tense}")
@@ -163,7 +167,11 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
         display_word = f"{card.selected_word_form} (from {card.word})"
 
     print(f"{card_type_icon} {card.card_type.title()} Card: {display_word}")
-    print(f"IPA: {card.ipa}")
+    # For Cloze cards with selected word form, show the conjugated IPA
+    if isinstance(card, ClozeCard) and card.selected_word_ipa:
+        print(f"IPA: {card.selected_word_ipa}")
+    else:
+        print(f"IPA: {card.ipa}")
     print(f"Part of speech: {card.part_of_speech}")
     if card.gender:
         print(f"Gender: {card.gender}")
@@ -227,7 +235,8 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
                     # Update the card with the first selected sentence
                     card.selected_sentence = selected_sentences[0][0]
                     card.selected_word_form = selected_sentences[0][1]
-                    card.selected_tense = selected_sentences[0][2]
+                    card.selected_word_ipa = selected_sentences[0][2]
+                    card.selected_tense = selected_sentences[0][3]
         elif action.startswith("🖼️"):
             await handle_image_regeneration(session, card)
         elif action.startswith("🔊"):
@@ -378,7 +387,13 @@ def show_session_summary(session: Session) -> None:
                 display_parts.append(f"[{card.selected_tense}]")
             display_word = " ".join(display_parts)
 
-        print(f"  {status} {display_word} ({card.ipa}) {' '.join(media_status)}")
+        # Show conjugated IPA for cloze cards if available
+        display_ipa = (
+            card.selected_word_ipa
+            if isinstance(card, ClozeCard) and card.selected_word_ipa
+            else card.ipa
+        )
+        print(f"  {status} {display_word} ({display_ipa}) {' '.join(media_status)}")
 
     print(f"\nAll media files are saved in: {session.output_directory}")
     print("Ready for Anki export!")

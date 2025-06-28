@@ -5,10 +5,11 @@ from pathlib import Path
 from loguru import logger
 
 from config import AnkiConfig
-from models import Session, WordCard
+from models import Session, WordCard, ClozeCard
+from typing import Union
 
 
-def create_field_3_content(card: WordCard, config: AnkiConfig) -> str:
+def create_field_3_content(card: Union[WordCard, ClozeCard], config: AnkiConfig) -> str:
     """Create content for field 3: Gender, Personal Connection, Extra Info."""
     parts = []
 
@@ -35,7 +36,7 @@ def create_field_3_content(card: WordCard, config: AnkiConfig) -> str:
     return ". ".join(parts) + "." if parts else ""
 
 
-def create_csv_row(card: WordCard, config: AnkiConfig) -> list[str]:
+def create_csv_row(card: Union[WordCard, ClozeCard], config: AnkiConfig) -> list[str]:
     """Create a CSV row for a single card."""
     # Field 1: Word
     word = card.word
@@ -54,7 +55,11 @@ def create_csv_row(card: WordCard, config: AnkiConfig) -> list[str]:
     if card.audio_path:
         audio_filename = f"{card.word.lower().replace(' ', '_')}-{card.short_id}.mp3"
         pronunciation_parts.append(f"[sound:{audio_filename}]")
-    if card.ipa:
+
+    # Use conjugated IPA for cloze cards if available
+    if isinstance(card, ClozeCard) and card.selected_word_ipa:
+        pronunciation_parts.append(card.selected_word_ipa)
+    elif card.ipa:
         pronunciation_parts.append(card.ipa)
     pronunciation = " ".join(pronunciation_parts)
 
@@ -143,11 +148,14 @@ def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> boo
             # Write card data
             writer = csv.writer(csvfile, delimiter="\t", quoting=csv.QUOTE_MINIMAL)
 
-            for card in session.vocabulary_cards:
+            # Write all cards (both vocabulary and cloze)
+            for card in session.cards:
                 if card.is_complete:
                     row = create_csv_row(card, config)
                     writer.writerow(row)
-                    logger.debug("Added card to CSV", word=card.word)
+                    logger.debug(
+                        "Added card to CSV", word=card.word, card_type=card.card_type
+                    )
 
         logger.info(
             "CSV generated successfully", path=output_path, cards=len(session.cards)

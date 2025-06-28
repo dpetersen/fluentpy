@@ -71,6 +71,7 @@ class ClozeCard:
     word_analysis: dict
     selected_sentence: str | None = None
     selected_word_form: str | None = None
+    selected_word_ipa: str | None = None
     selected_tense: str | None = None
     personal_context: str | None = None
     extra_prompt: str | None = None
@@ -131,7 +132,7 @@ class ClozeCard:
         return self.extra_prompt
 
     def create_duplicate_with_sentence(
-        self, sentence: str, word_form: str, tense: str | None = None
+        self, sentence: str, word_form: str, word_ipa: str, tense: str | None = None
     ) -> "ClozeCard":
         """Create a new ClozeCard with the same base data but different sentence."""
         return ClozeCard(
@@ -139,6 +140,7 @@ class ClozeCard:
             word_analysis=self.word_analysis.copy(),
             selected_sentence=sentence,
             selected_word_form=word_form,
+            selected_word_ipa=word_ipa,
             selected_tense=tense,
             personal_context=self.personal_context,
             extra_prompt=self.extra_prompt,
