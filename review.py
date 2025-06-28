@@ -268,7 +268,11 @@ async def handle_image_regeneration(
     session: Session, card: Union[WordCard, ClozeCard]
 ) -> None:
     """Handle user request to regenerate image with optional additional context."""
-    print(f"\nRegenerating image for '{card.word}'...")
+    # Show conjugated form for cloze cards
+    display_word = card.word
+    if isinstance(card, ClozeCard) and card.selected_word_form:
+        display_word = f"{card.selected_word_form} (from {card.word})"
+    print(f"\nRegenerating image for '{display_word}'...")
 
     # Ask for additional context
     additional_context = await questionary.text(
@@ -300,7 +304,11 @@ async def handle_audio_regeneration(
     session: Session, card: Union[WordCard, ClozeCard]
 ) -> None:
     """Handle user request to regenerate audio."""
-    print(f"\nRegenerating audio for '{card.word}'...")
+    # Show conjugated form for cloze cards
+    display_word = card.word
+    if isinstance(card, ClozeCard) and card.selected_word_form:
+        display_word = f"{card.selected_word_form} (from {card.word})"
+    print(f"\nRegenerating audio for '{display_word}'...")
 
     logger.info("Starting audio regeneration", word=card.word)
 
@@ -318,7 +326,11 @@ async def handle_audio_regeneration(
 async def handle_audio_replay(card: Union[WordCard, ClozeCard]) -> None:
     """Handle user request to replay audio."""
     if card.audio_path and Path(card.audio_path).exists():
-        print(f"\n🔈 Replaying audio for '{card.word}'...")
+        # Show conjugated form for cloze cards
+        display_word = card.word
+        if isinstance(card, ClozeCard) and card.selected_word_form:
+            display_word = f"{card.selected_word_form} (from {card.word})"
+        print(f"\n🔈 Replaying audio for '{display_word}'...")
         play_audio(Path(card.audio_path))
     else:
         print("❌ No audio available to replay")

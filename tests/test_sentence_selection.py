@@ -72,7 +72,11 @@ class TestSelectSentencesForClozeCard:
             "verb_type": None,
             "example_sentences": [
                 {"sentence": "La casa es grande", "word_form": "casa", "ipa": "ˈka.sa"},
-                {"sentence": "Mi casa tiene jardín", "word_form": "casa", "ipa": "ˈka.sa"},
+                {
+                    "sentence": "Mi casa tiene jardín",
+                    "word_form": "casa",
+                    "ipa": "ˈka.sa",
+                },
             ],
         }
 
@@ -107,7 +111,12 @@ class TestSelectSentencesForClozeCard:
                     "ipa": "koˈmeɾ",
                     "tense": "infinitivo",
                 },
-                {"sentence": "Él come mucho", "word_form": "come", "ipa": "ˈko.me", "tense": "presente"},
+                {
+                    "sentence": "Él come mucho",
+                    "word_form": "come",
+                    "ipa": "ˈko.me",
+                    "tense": "presente",
+                },
             ],
         }
 

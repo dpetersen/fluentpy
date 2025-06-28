@@ -54,11 +54,14 @@ def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
 
     # Field 6: - Extra Info (Pronunciation, personal connections, conjugations, etc)
     extra_info_parts = []
-    if card.ipa:
-        extra_info_parts.append(card.ipa)
     if card.audio_path:
         audio_filename = f"{card.word.lower().replace(' ', '_')}-{card.short_id}.mp3"
         extra_info_parts.append(f"[sound:{audio_filename}]")
+    # Use conjugated IPA if available, otherwise fall back to base word IPA
+    if card.selected_word_ipa:
+        extra_info_parts.append(card.selected_word_ipa)
+    elif card.ipa:
+        extra_info_parts.append(card.ipa)
     if card.personal_context:
         extra_info_parts.append(card.personal_context)
     extra_info = " ".join(extra_info_parts)
