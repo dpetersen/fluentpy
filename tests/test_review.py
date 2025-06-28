@@ -389,6 +389,7 @@ class TestShowSessionSummary:
                 word_analysis=word_analysis,
                 selected_sentence="Ella habla español",
                 selected_word_form="habla",
+                selected_tense="presente",
             )
             cloze_card.mark_complete()
 

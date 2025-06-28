@@ -94,22 +94,24 @@ async def main():
                 selected_sentences = await select_sentences_for_cloze_card(card)
 
                 # Create cards for each selected sentence
-                for i, (sentence, word_form) in enumerate(selected_sentences):
+                for i, (sentence, word_form, tense) in enumerate(selected_sentences):
                     if i == 0:
                         # Update the original card with the first sentence
                         card.selected_sentence = sentence
                         card.selected_word_form = word_form
+                        card.selected_tense = tense
                         session.add_card(card)
                     else:
                         # Create duplicate cards for additional sentences
                         new_card = card.create_duplicate_with_sentence(
-                            sentence, word_form
+                            sentence, word_form, tense
                         )
                         session.add_card(new_card)
                         logger.info(
                             "Created additional card",
                             word=new_card.word,
                             sentence=sentence,
+                            tense=tense,
                             guid=new_card.guid,
                         )
 
