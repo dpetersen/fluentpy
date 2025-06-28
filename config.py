@@ -53,7 +53,7 @@ class AnkiConfig:
 
     # Note type configuration
     NOTE_TYPE = "2. Picture Words"
-    DECK_NAME = "FluentPy Test"
+    DECK_NAME = "Fluent Forever Spanish::2. Everything Else"
 
     # Field configuration
     FIELD_NAMES = [
@@ -119,7 +119,7 @@ class ClozeAnkiConfig:
 
     # Note type configuration
     NOTE_TYPE = "3. All-Purpose Card"
-    DECK_NAME = "FluentPy Test"
+    DECK_NAME = "Fluent Forever Spanish::2. Everything Else"
 
     # Field configuration - exact field names including "- " prefixes
     FIELD_NAMES = [

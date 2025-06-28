@@ -166,14 +166,17 @@ async def main():
             print("\n📤 Exporting to Anki...")
 
             # Optional: Ask for custom deck name
+            default_deck = AnkiConfig.DECK_NAME
             use_custom_deck = await questionary.confirm(
-                "Export to default deck 'FluentPy Test'?", default=True
+                f"Export to default deck '{default_deck}'?",
+                default=True,
             ).ask_async()
 
             deck_name = None
             if not use_custom_deck:
                 deck_name = await questionary.text(
-                    "Enter deck name:", default="FluentPy Test"
+                    "Enter deck name:",
+                    default=default_deck,
                 ).ask_async()
 
             export_results = []

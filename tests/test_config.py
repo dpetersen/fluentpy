@@ -36,7 +36,7 @@ class TestAnkiConfig:
         """Test AnkiConfig with default values."""
         config = AnkiConfig()
 
-        assert config.deck_name == "FluentPy Test"
+        assert config.deck_name == "Fluent Forever Spanish::2. Everything Else"
         assert config.test_spelling is False
         assert config.NOTE_TYPE == "2. Picture Words"
 

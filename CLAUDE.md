@@ -105,6 +105,7 @@ The codebase follows a modular architecture with clear separation of concerns, i
    - Uses OpenAI GPT-4o for Spanish word analysis (IPA, part of speech, gender, verb type)
    - Generates 15 example sentences for cloze cards with different conjugations and tenses
    - For verbs: includes present, preterite, imperfect, future, conditional, and subjunctive forms
+   - Each example sentence includes tense information (e.g., "presente", "pretérito", "imperfecto")
    - Returns structured `WordAnalysis` dictionary for consistent data handling
 
 8. **`images.py`**: Image generation with specialized prompts
@@ -157,6 +158,13 @@ Users can select multiple sentences when creating cloze cards, particularly usef
 - Each selected sentence generates a separate card with unique GUID and media
 - First selection updates the original card, additional selections create duplicates
 - Each card gets context-specific image and audio based on its sentence
+
+### Tense Display for Learning
+To help users learn Spanish tenses, the system displays grammatical tense information:
+- Sentence selection shows tense for each option (e.g., "uses: habla, tense: presente")
+- Review UI displays tense in brackets (e.g., "habla (hablar) [presente]")
+- Card details show tense information below the selected sentence
+- Helps distinguish between pretérito/imperfecto and other challenging tense pairs
 
 ## Key Patterns
 
