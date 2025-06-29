@@ -44,7 +44,20 @@ def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
         front_picture = f'<img src="{image_filename}">'
 
     # Field 3: Front (Definitions, base word, etc.)
-    front_definitions = card.definitions or ""
+    # Build front definitions with verb type and tense info
+    front_definitions_parts = []
+
+    # Add user-provided definitions if present
+    if card.definitions:
+        front_definitions_parts.append(card.definitions)
+
+    # Add verb type and tense for verbs
+    if card.verb_type and card.selected_tense:
+        verb_info = f"{card.verb_type}, {card.selected_tense}"
+        front_definitions_parts.append(verb_info)
+
+    # Join with " - " separator if both parts exist
+    front_definitions = " - ".join(front_definitions_parts)
 
     # Field 4: Back (a single word/phrase, no context)
     back_word = card.word

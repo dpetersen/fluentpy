@@ -183,7 +183,7 @@ def test_export_cloze_cards_csv_content(
     assert f'<img src="casa-{card.short_id}.jpg">' in row[1]  # Front (Picture)
     assert (
         row[2] == "Think of your childhood home"
-    )  # Front (Definitions) - only memory_aid, no word
+    )  # Front (Definitions) - only memory_aid, no verb info (casa is a noun)
     assert row[3] == "casa"  # Back (a single word/phrase)
     assert row[4] == "La casa es muy grande."  # Full sentence (no audio)
     assert "ˈka.sa" in row[5]  # Extra Info (contains IPA)
@@ -333,3 +333,179 @@ def test_export_cloze_cards_error_handling(
         finally:
             # Restore permissions for cleanup
             tmp_path.chmod(0o755)
+
+
+def test_cloze_export_verb_with_user_definitions(cloze_config, tmp_path):
+    """Test export of verb cloze card with user-provided definitions."""
+    cloze_config.anki_media_path = tmp_path / "collection_media"
+    cloze_config.anki_media_path.mkdir(parents=True)
+
+    # Create a verb card with user definitions
+    card = ClozeCard(
+        word="hablar",
+        guid=str(uuid.uuid4()),
+        word_analysis={
+            "ipa": "aˈβlaɾ",
+            "part_of_speech": "verbo",
+            "gender": None,
+            "verb_type": "intransitive",
+            "example_sentences": [
+                {
+                    "sentence": "Yo hablo español.",
+                    "word_form": "hablo",
+                    "tense": "presente",
+                }
+            ],
+        },
+        selected_sentence="Yo hablo español.",
+        selected_word_form="hablo",
+        selected_tense="presente",
+        image_path="hablar-test123.jpg",
+        audio_path="hablar-test123.mp3",
+        memory_aid="To speak, think of someone talking",
+    )
+    card.mark_complete()
+
+    # Create mock media files
+    image_path = tmp_path / card.image_path
+    audio_path = tmp_path / card.audio_path
+    image_path.write_text("fake image")
+    audio_path.write_text("fake audio")
+
+    session = Session(
+        vocabulary_cards=[],
+        cloze_cards=[card],
+        output_directory=tmp_path,
+    )
+
+    with patch("cloze_export.copy_cloze_media_files") as mock_copy:
+        mock_copy.return_value = {"hablar_image": True, "hablar_audio": True}
+        export_cloze_cards_to_anki(session, cloze_config)
+
+    csv_path = tmp_path / "anki_import_cloze.csv"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        # Skip headers
+        for line in f:
+            if line.startswith("#fields:"):
+                break
+        reader = csv.reader(f, delimiter="\t")
+        row = next(reader)
+
+    # Check Field 3 has user definition + verb info
+    assert row[2] == "To speak, think of someone talking - intransitive, presente"
+
+
+def test_cloze_export_verb_without_user_definitions(cloze_config, tmp_path):
+    """Test export of verb cloze card without user-provided definitions."""
+    cloze_config.anki_media_path = tmp_path / "collection_media"
+    cloze_config.anki_media_path.mkdir(parents=True)
+
+    # Create a verb card without user definitions
+    card = ClozeCard(
+        word="comer",
+        guid=str(uuid.uuid4()),
+        word_analysis={
+            "ipa": "koˈmeɾ",
+            "part_of_speech": "verbo",
+            "gender": None,
+            "verb_type": "transitive",
+            "example_sentences": [
+                {
+                    "sentence": "Ella come manzanas.",
+                    "word_form": "come",
+                    "tense": "presente",
+                }
+            ],
+        },
+        selected_sentence="Ella come manzanas.",
+        selected_word_form="come",
+        selected_tense="presente",
+        image_path="comer-test456.jpg",
+        audio_path="comer-test456.mp3",
+        memory_aid=None,  # No user definitions
+    )
+    card.mark_complete()
+
+    # Create mock media files
+    image_path = tmp_path / card.image_path
+    audio_path = tmp_path / card.audio_path
+    image_path.write_text("fake image")
+    audio_path.write_text("fake audio")
+
+    session = Session(
+        vocabulary_cards=[],
+        cloze_cards=[card],
+        output_directory=tmp_path,
+    )
+
+    with patch("cloze_export.copy_cloze_media_files") as mock_copy:
+        mock_copy.return_value = {"comer_image": True, "comer_audio": True}
+        export_cloze_cards_to_anki(session, cloze_config)
+
+    csv_path = tmp_path / "anki_import_cloze.csv"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        # Skip headers
+        for line in f:
+            if line.startswith("#fields:"):
+                break
+        reader = csv.reader(f, delimiter="\t")
+        row = next(reader)
+
+    # Check Field 3 has only verb info (no user definition)
+    assert row[2] == "transitive, presente"
+
+
+def test_cloze_export_non_verb_no_tense_info(cloze_config, tmp_path):
+    """Test export of non-verb cloze card shows no verb tense info."""
+    cloze_config.anki_media_path = tmp_path / "collection_media"
+    cloze_config.anki_media_path.mkdir(parents=True)
+
+    # Create a noun card (non-verb)
+    card = ClozeCard(
+        word="mesa",
+        guid=str(uuid.uuid4()),
+        word_analysis={
+            "ipa": "ˈme.sa",
+            "part_of_speech": "sustantivo",
+            "gender": "femenino",
+            "verb_type": None,  # Not a verb
+            "example_sentences": [
+                {"sentence": "La mesa está limpia.", "word_form": "mesa", "tense": None}
+            ],
+        },
+        selected_sentence="La mesa está limpia.",
+        selected_word_form="mesa",
+        selected_tense=None,  # Not a verb, no tense
+        image_path="mesa-test789.jpg",
+        audio_path="mesa-test789.mp3",
+        memory_aid="Table where we eat",
+    )
+    card.mark_complete()
+
+    # Create mock media files
+    image_path = tmp_path / card.image_path
+    audio_path = tmp_path / card.audio_path
+    image_path.write_text("fake image")
+    audio_path.write_text("fake audio")
+
+    session = Session(
+        vocabulary_cards=[],
+        cloze_cards=[card],
+        output_directory=tmp_path,
+    )
+
+    with patch("cloze_export.copy_cloze_media_files") as mock_copy:
+        mock_copy.return_value = {"mesa_image": True, "mesa_audio": True}
+        export_cloze_cards_to_anki(session, cloze_config)
+
+    csv_path = tmp_path / "anki_import_cloze.csv"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        # Skip headers
+        for line in f:
+            if line.startswith("#fields:"):
+                break
+        reader = csv.reader(f, delimiter="\t")
+        row = next(reader)
+
+    # Check Field 3 has only user definition (no verb info)
+    assert row[2] == "Table where we eat"
