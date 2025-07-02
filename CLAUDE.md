@@ -219,6 +219,7 @@ The user specifically chose a terminal interface over GUI for simplicity and spe
 
 ### Desired Future Functionality
 
+- BUG: when I do too many cloze cards, I'm seeing some have no image found. I think maybe I'm getting rate limited by OpenAI?
 - Add English translation for sentences that show up in my review UI only.
 - Need to get OpenAI to generate image prompts for me. I want it to try and generate an image that shows who is speaking to whom, and when they are talking about future/current/past actions?
 - Create multiple images per prompt and choose one
