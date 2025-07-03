@@ -86,7 +86,7 @@ def copy_media_files(session: Session, config: AnkiConfig) -> dict[str, bool]:
 
     copy_results = {}
 
-    for card in session.cards:
+    for card in session.vocabulary_cards:
         if not card.is_complete:
             logger.warning("Skipping incomplete card", word=card.word)
             continue
@@ -125,11 +125,12 @@ def copy_media_files(session: Session, config: AnkiConfig) -> dict[str, bool]:
 
 
 def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> bool:
-    """Generate Anki import CSV file for approved cards."""
-    if not session.is_complete:
-        incomplete_count = len(session.incomplete_cards)
+    """Generate Anki import CSV file for approved vocabulary cards."""
+    incomplete_vocab_cards = [card for card in session.vocabulary_cards if not card.is_complete]
+    if incomplete_vocab_cards:
+        incomplete_count = len(incomplete_vocab_cards)
         logger.error(
-            "Cannot export incomplete session", incomplete_cards=incomplete_count
+            "Cannot export incomplete vocabulary cards", incomplete_cards=incomplete_count
         )
         return False
 
@@ -148,8 +149,8 @@ def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> boo
             # Write card data
             writer = csv.writer(csvfile, delimiter="\t", quoting=csv.QUOTE_MINIMAL)
 
-            # Write all cards (both vocabulary and cloze)
-            for card in session.cards:
+            # Write only vocabulary cards (not cloze cards)
+            for card in session.vocabulary_cards:
                 if card.is_complete:
                     row = create_csv_row(card, config)
                     writer.writerow(row)
@@ -158,7 +159,7 @@ def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> boo
                     )
 
         logger.info(
-            "CSV generated successfully", path=output_path, cards=len(session.cards)
+            "CSV generated successfully", path=output_path, cards=len(session.vocabulary_cards)
         )
         return True
 
@@ -177,13 +178,14 @@ def export_to_anki(
     if csv_path is None:
         csv_path = session.output_directory / "anki_import.csv"
 
-    logger.info("Starting Anki export", cards=len(session.cards))
+    logger.info("Starting Anki export", cards=len(session.vocabulary_cards))
 
-    # Verify all cards are complete
-    if not session.is_complete:
-        incomplete_cards = [card.word for card in session.incomplete_cards]
+    # Verify all vocabulary cards are complete
+    incomplete_vocab_cards = [card for card in session.vocabulary_cards if not card.is_complete]
+    if incomplete_vocab_cards:
+        incomplete_words = [card.word for card in incomplete_vocab_cards]
         logger.error(
-            "Cannot export: incomplete cards found", incomplete_cards=incomplete_cards
+            "Cannot export: incomplete vocabulary cards found", incomplete_cards=incomplete_words
         )
         return False
 
@@ -207,7 +209,7 @@ def export_to_anki(
         print("\n✅ Export complete!")
         print(f"📁 CSV file: {csv_path}")
         print(f"📁 Media copied to: {config.anki_media_path}")
-        print(f"📊 Cards exported: {len(session.cards)}")
+        print(f"📊 Cards exported: {len(session.vocabulary_cards)}")
         print("\nReady to import in Anki:")
         print("  1. Open Anki")
         print("  2. File → Import")

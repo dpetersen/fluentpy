@@ -12,7 +12,7 @@ from anki_export import (
     generate_csv,
 )
 from config import AnkiConfig
-from models import Session, WordCard
+from models import Session, WordCard, ClozeCard
 
 
 class TestCreateField3Content:
@@ -202,6 +202,79 @@ class TestCopyMediaFiles:
             # Should return empty results (no files copied)
             assert len(result) == 0
 
+    def test_only_copies_vocabulary_card_media(self):
+        """Test that copy_media_files only copies vocabulary card media, not cloze."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "output"
+            output_dir.mkdir()
+            anki_dir = Path(tmpdir) / "anki"
+            anki_dir.mkdir()
+
+            session = Session(output_directory=output_dir)
+
+            # Create vocabulary card with media
+            vocab_card = WordCard(
+                word="gato",
+                ipa="ˈga.to",
+                part_of_speech="noun",
+                gender="masculine",
+                guid="vocab-guid-9999",
+            )
+            vocab_image = output_dir / "gato-vocab-gui.jpg"
+            vocab_audio = output_dir / "gato-vocab-gui.mp3"
+            vocab_image.write_text("vocab image")
+            vocab_audio.write_text("vocab audio")
+            vocab_card.image_path = vocab_image
+            vocab_card.audio_path = vocab_audio
+            vocab_card.mark_complete()
+            session.add_card(vocab_card)
+
+            # Create cloze card with media
+            cloze_card = ClozeCard(
+                word="comer",
+                word_analysis={
+                    "ipa": "koˈmeɾ",
+                    "part_of_speech": "verb",
+                    "verb_type": "er_verb",
+                    "gender": None,
+                    "example_sentences": []
+                },
+                selected_sentence="Yo como pan",
+                selected_word_form="como",
+                selected_word_ipa="ˈko.mo",
+                guid="cloze-guid-8888",
+            )
+            cloze_image = output_dir / "comer-cloze-gui.jpg"
+            cloze_audio = output_dir / "comer-cloze-gui.mp3"
+            cloze_image.write_text("cloze image")
+            cloze_audio.write_text("cloze audio")
+            cloze_card.image_path = cloze_image
+            cloze_card.audio_path = cloze_audio
+            cloze_card.mark_complete()
+            session.add_card(cloze_card)
+
+            config = AnkiConfig(anki_media_path=anki_dir)
+            result = copy_media_files(session, config)
+
+            # Should only copy vocabulary card media
+            assert len(result) == 2  # vocab image and audio
+            assert "gato_image" in result
+            assert "gato_audio" in result
+            assert result["gato_image"] is True
+            assert result["gato_audio"] is True
+            
+            # Cloze media should NOT be copied
+            assert "comer_image" not in result
+            assert "comer_audio" not in result
+            
+            # Check actual files in anki directory
+            anki_files = list(anki_dir.glob("*"))
+            assert len(anki_files) == 2
+            vocab_files = [f.name for f in anki_files]
+            assert any("gato" in f and ".jpg" in f for f in vocab_files)
+            assert any("gato" in f and ".mp3" in f for f in vocab_files)
+            assert not any("comer" in f for f in vocab_files)
+
 
 class TestGenerateCsv:
     def test_generates_csv_successfully(self):
@@ -250,6 +323,59 @@ class TestGenerateCsv:
 
             assert result is False
             assert not output_path.exists()
+
+    def test_only_exports_vocabulary_cards(self):
+        """Test that export only includes vocabulary cards, not cloze cards."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "test.csv"
+
+            session = Session()
+            
+            # Add a vocabulary card
+            vocab_card = WordCard(
+                word="casa",
+                ipa="ˈka.sa",
+                part_of_speech="noun",
+                gender="feminine",
+                guid="vocab-guid-1234",
+            )
+            vocab_card.mark_complete()
+            session.add_card(vocab_card)
+            
+            # Add a cloze card
+            cloze_card = ClozeCard(
+                word="hablar",
+                word_analysis={
+                    "ipa": "aˈβlaɾ",
+                    "part_of_speech": "verb",
+                    "verb_type": "ar_verb",
+                    "gender": None,
+                    "example_sentences": []
+                },
+                selected_sentence="Yo hablo español",
+                selected_word_form="hablo",
+                selected_word_ipa="ˈa.βlo",
+                guid="cloze-guid-5678",
+            )
+            cloze_card.mark_complete()
+            session.add_card(cloze_card)
+
+            config = AnkiConfig()
+            result = generate_csv(session, config, output_path)
+
+            assert result is True
+            assert output_path.exists()
+
+            # Check CSV content only has vocabulary card
+            content = output_path.read_text()
+            assert "casa" in content
+            assert "vocab-guid-1234" in content
+            
+            # Cloze card should NOT be in the output
+            assert "hablar" not in content
+            assert "hablo" not in content
+            assert "cloze-guid-5678" not in content
+            assert "Yo hablo español" not in content
 
 
 class TestExportToAnki:
