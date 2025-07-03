@@ -219,7 +219,11 @@ The user specifically chose a terminal interface over GUI for simplicity and spe
 
 ### Desired Future Functionality
 
-- BUG: when I do too many cloze cards, I'm seeing some have no image found. I think maybe I'm getting rate limited by OpenAI?
+- BUG: when I do too many cloze cards, I'm seeing some have no image found. I think maybe I'm getting rate limited by OpenAI? Here's one log for a failure. At the very least it needs to abort trying to make that card so I don't end up with a card with no image.
+```
+2025-07-01 21:55:17 | ERROR    | session:generate_media_for_card:190 - Image generation failed {'word': 'pecho', 'error': "Error code: 400 - {'error': {'message': 'Request was rejected as a result of the safety system. Request may contain content that is not allowed by the safety system.', 'type': 'image_generation_user_error', 'param': None, 'code': 'moderation_blocked'}}"}
+```
+- Vocabulary cards when nouns should show the masculine/feminine in the word, e.g. casa should be "la casa"?
 - Add English translation for sentences that show up in my review UI only.
 - Need to get OpenAI to generate image prompts for me. I want it to try and generate an image that shows who is speaking to whom, and when they are talking about future/current/past actions?
 - Create multiple images per prompt and choose one
