@@ -1,7 +1,7 @@
 import base64
 
 from loguru import logger
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, BadRequestError
 from term_image.image import from_file
 
 from word_analysis import WordAnalysis
@@ -107,16 +107,28 @@ async def generate_image(
         sentence=sentence_context if sentence_context else None,
     )
     prompt = _create_prompt(word, analysis, extra_prompt, sentence_context)
-    response = await client.images.generate(
-        model="gpt-image-1",
-        prompt=prompt,
-        n=1,
-        size="1024x1024",
-        quality="medium",
-        output_format="jpeg",
-        output_compression=80,
-    )
-    logger.debug("Received image response", word=word)
+
+    try:
+        response = await client.images.generate(
+            model="gpt-image-1",
+            prompt=prompt,
+            n=1,
+            size="1024x1024",
+            quality="medium",
+            output_format="jpeg",
+            output_compression=80,
+        )
+        logger.debug("Received image response", word=word)
+    except BadRequestError as e:
+        # Log additional context for moderation failures
+        if "moderation_blocked" in str(e):
+            logger.error(
+                "Image generation blocked by OpenAI moderation",
+                word=word,
+                error=str(e),
+                hint="Try regenerating with additional context to modify the prompt",
+            )
+        raise
 
     if response.data:
         image_data = base64.b64decode(response.data[0].b64_json or "")

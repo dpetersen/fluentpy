@@ -217,8 +217,8 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
         if isinstance(card, ClozeCard):
             actions.append("🔄 Change selected sentence")
 
-        if card.image_path:
-            actions.append("🖼️  Regenerate image")
+        # Always show regenerate image option - allows fixing failed generations
+        actions.append("🖼️  Regenerate image")
 
         if card.audio_path:
             actions.append("🔊 Regenerate audio")
@@ -236,6 +236,21 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
                     "❌ Cannot approve Cloze card without selecting a sentence first."
                 )
                 continue
+
+            # Check if card has required media files
+            missing_media = []
+            if not card.image_path or not Path(card.image_path).exists():
+                missing_media.append("image")
+            if not card.audio_path or not Path(card.audio_path).exists():
+                missing_media.append("audio")
+
+            if missing_media:
+                print(
+                    f"❌ Cannot approve card without {' and '.join(missing_media)}. "
+                    f"Please regenerate the missing media first."
+                )
+                continue
+
             card.mark_complete()
             logger.info("Card approved", word=card.word)
             break
