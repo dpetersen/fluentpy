@@ -126,11 +126,14 @@ def copy_media_files(session: Session, config: AnkiConfig) -> dict[str, bool]:
 
 def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> bool:
     """Generate Anki import CSV file for approved vocabulary cards."""
-    incomplete_vocab_cards = [card for card in session.vocabulary_cards if not card.is_complete]
+    incomplete_vocab_cards = [
+        card for card in session.vocabulary_cards if not card.is_complete
+    ]
     if incomplete_vocab_cards:
         incomplete_count = len(incomplete_vocab_cards)
         logger.error(
-            "Cannot export incomplete vocabulary cards", incomplete_cards=incomplete_count
+            "Cannot export incomplete vocabulary cards",
+            incomplete_cards=incomplete_count,
         )
         return False
 
@@ -159,7 +162,9 @@ def generate_csv(session: Session, config: AnkiConfig, output_path: Path) -> boo
                     )
 
         logger.info(
-            "CSV generated successfully", path=output_path, cards=len(session.vocabulary_cards)
+            "CSV generated successfully",
+            path=output_path,
+            cards=len(session.vocabulary_cards),
         )
         return True
 
@@ -181,11 +186,14 @@ def export_to_anki(
     logger.info("Starting Anki export", cards=len(session.vocabulary_cards))
 
     # Verify all vocabulary cards are complete
-    incomplete_vocab_cards = [card for card in session.vocabulary_cards if not card.is_complete]
+    incomplete_vocab_cards = [
+        card for card in session.vocabulary_cards if not card.is_complete
+    ]
     if incomplete_vocab_cards:
         incomplete_words = [card.word for card in incomplete_vocab_cards]
         logger.error(
-            "Cannot export: incomplete vocabulary cards found", incomplete_cards=incomplete_words
+            "Cannot export: incomplete vocabulary cards found",
+            incomplete_cards=incomplete_words,
         )
         return False
 

@@ -237,7 +237,7 @@ class TestCopyMediaFiles:
                     "part_of_speech": "verb",
                     "verb_type": "er_verb",
                     "gender": None,
-                    "example_sentences": []
+                    "example_sentences": [],
                 },
                 selected_sentence="Yo como pan",
                 selected_word_form="como",
@@ -262,11 +262,11 @@ class TestCopyMediaFiles:
             assert "gato_audio" in result
             assert result["gato_image"] is True
             assert result["gato_audio"] is True
-            
+
             # Cloze media should NOT be copied
             assert "comer_image" not in result
             assert "comer_audio" not in result
-            
+
             # Check actual files in anki directory
             anki_files = list(anki_dir.glob("*"))
             assert len(anki_files) == 2
@@ -330,7 +330,7 @@ class TestGenerateCsv:
             output_path = Path(tmpdir) / "test.csv"
 
             session = Session()
-            
+
             # Add a vocabulary card
             vocab_card = WordCard(
                 word="casa",
@@ -341,7 +341,7 @@ class TestGenerateCsv:
             )
             vocab_card.mark_complete()
             session.add_card(vocab_card)
-            
+
             # Add a cloze card
             cloze_card = ClozeCard(
                 word="hablar",
@@ -350,7 +350,7 @@ class TestGenerateCsv:
                     "part_of_speech": "verb",
                     "verb_type": "ar_verb",
                     "gender": None,
-                    "example_sentences": []
+                    "example_sentences": [],
                 },
                 selected_sentence="Yo hablo español",
                 selected_word_form="hablo",
@@ -370,7 +370,7 @@ class TestGenerateCsv:
             content = output_path.read_text()
             assert "casa" in content
             assert "vocab-guid-1234" in content
-            
+
             # Cloze card should NOT be in the output
             assert "hablar" not in content
             assert "hablo" not in content
