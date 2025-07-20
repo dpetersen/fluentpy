@@ -10,9 +10,20 @@ from typing import Union
 from session import regenerate_audio, regenerate_image
 
 
-async def review_session(session: Session) -> None:
+async def review_session(session: Session, auto_approve: bool = False) -> None:
     """Interactive review of all cards in the session until all are approved."""
-    logger.info("Starting session review", total_cards=len(session.cards))
+    logger.info(
+        "Starting session review",
+        total_cards=len(session.cards),
+        auto_approve=auto_approve,
+    )
+
+    if auto_approve:
+        # Auto-approve all cards for testing
+        for card in session.cards:
+            card.mark_complete()
+        logger.info("Auto-approved all cards")
+        return
 
     while not session.is_complete:
         incomplete_cards = session.incomplete_cards

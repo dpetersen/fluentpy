@@ -1,6 +1,8 @@
+import argparse
 import asyncio
 import subprocess
 import sys
+from pathlib import Path
 
 import questionary
 from loguru import logger
@@ -10,7 +12,11 @@ from cloze_export import export_cloze_cards_to_anki
 from config import AnkiConfig, ClozeAnkiConfig
 from review import review_session, show_session_summary, select_sentences_for_cloze_card
 from session import create_session, generate_media_for_session
-from word_input import get_all_word_inputs
+from word_input import (
+    get_all_word_inputs,
+    get_words_from_list,
+    get_cloze_words_from_list,
+)
 
 # Configure loguru to show extra fields
 logger.remove()  # Remove default handler
@@ -37,6 +43,23 @@ def check_mpv_availability() -> bool:
 
 async def main():
     """Complete FluentPy workflow: input → generation → review → export."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="FluentPy - Spanish Flashcard Generator"
+    )
+    parser.add_argument(
+        "--word-file", type=Path, help="File containing vocabulary words (one per line)"
+    )
+    parser.add_argument(
+        "--cloze-file", type=Path, help="File containing cloze words (one per line)"
+    )
+    parser.add_argument(
+        "--auto-approve",
+        action="store_true",
+        help="Automatically approve all cards (for testing)",
+    )
+    args = parser.parse_args()
+
     # Check for required dependencies first
     if not check_mpv_availability():
         print("❌ Error: mpv is required for audio playback but not found.")
@@ -57,7 +80,27 @@ async def main():
     print("• Cloze cards: Sentence-based cards with word blanked out")
     print()
 
-    vocabulary_inputs, cloze_inputs = await get_all_word_inputs()
+    # Check if we should read from files or use interactive mode
+    if args.word_file or args.cloze_file:
+        vocabulary_inputs = []
+        cloze_inputs = []
+
+        if args.word_file and args.word_file.exists():
+            words = args.word_file.read_text().strip().split("\n")
+            vocabulary_inputs = get_words_from_list(words)
+            logger.info(
+                f"Loaded {len(vocabulary_inputs)} vocabulary words from {args.word_file}"
+            )
+
+        if args.cloze_file and args.cloze_file.exists():
+            words = args.cloze_file.read_text().strip().split("\n")
+            cloze_inputs = get_cloze_words_from_list(words)
+            logger.info(
+                f"Loaded {len(cloze_inputs)} cloze words from {args.cloze_file}"
+            )
+    else:
+        # Interactive mode
+        vocabulary_inputs, cloze_inputs = await get_all_word_inputs()
     total_words = len(vocabulary_inputs) + len(cloze_inputs)
 
     if total_words == 0:
@@ -83,15 +126,38 @@ async def main():
     cloze_cards = session.cloze_cards.copy()  # Copy the list as we'll be modifying it
     if cloze_cards:
         print(f"\n🧩 Selecting sentences for {len(cloze_cards)} Cloze word(s)...")
-        print("Choose one or more sentences for each word to create multiple cards:")
-        print()
+        if not args.auto_approve:
+            print(
+                "Choose one or more sentences for each word to create multiple cards:"
+            )
+            print()
 
         try:
             # Clear the session's cloze cards list as we'll rebuild it with expanded cards
             session.cloze_cards.clear()
 
             for card in cloze_cards:
-                selected_sentences = await select_sentences_for_cloze_card(card)
+                if args.auto_approve:
+                    # Auto-select first sentence for testing
+                    if card.word_analysis["example_sentences"]:
+                        first_sentence = card.word_analysis["example_sentences"][0]
+                        selected_sentences = [
+                            (
+                                first_sentence["sentence"],
+                                first_sentence.get(
+                                    "word_form",
+                                    first_sentence.get("word_in_sentence", ""),
+                                ),
+                                first_sentence.get(
+                                    "ipa", first_sentence.get("word_ipa", "")
+                                ),
+                                first_sentence.get("tense", ""),
+                            )
+                        ]
+                    else:
+                        selected_sentences = []
+                else:
+                    selected_sentences = await select_sentences_for_cloze_card(card)
 
                 # Create cards for each selected sentence
                 for i, (sentence, word_form, ipa, tense) in enumerate(
@@ -146,7 +212,7 @@ async def main():
     print()
 
     try:
-        await review_session(session)
+        await review_session(session, auto_approve=args.auto_approve)
         logger.info("Review session completed")
     except Exception as e:
         logger.error("Failed during review", error=str(e))
@@ -161,21 +227,28 @@ async def main():
     cloze_cards = session.cloze_cards
 
     if vocabulary_cards or cloze_cards:
-        export_choice = await questionary.confirm(
-            "Would you like to export to Anki now?", default=True
-        ).ask_async()
+        if args.auto_approve:
+            export_choice = True
+        else:
+            export_choice = await questionary.confirm(
+                "Would you like to export to Anki now?", default=True
+            ).ask_async()
 
         if export_choice:
             print("\n📤 Exporting to Anki...")
 
             # Optional: Ask for custom deck name
             default_deck = AnkiConfig.DECK_NAME
-            use_custom_deck = await questionary.confirm(
-                f"Export to default deck '{default_deck}'?",
-                default=True,
-            ).ask_async()
+            if args.auto_approve:
+                use_custom_deck = True
+                deck_name = None
+            else:
+                use_custom_deck = await questionary.confirm(
+                    f"Export to default deck '{default_deck}'?",
+                    default=True,
+                ).ask_async()
+                deck_name = None
 
-            deck_name = None
             if not use_custom_deck:
                 deck_name = await questionary.text(
                     "Enter deck name:",
