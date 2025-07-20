@@ -249,16 +249,29 @@ class TestReviewCard:
     @patch("review.questionary.select")
     async def test_approves_card(self, mock_select, mock_display):
         """Test approving a card marks it complete."""
-        session = Session()
-        card = WordCard(word="test", ipa="test", part_of_speech="noun")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            session = Session()
+            # Create media files so approval can succeed
+            image_path = Path(tmpdir) / "test.jpg"
+            audio_path = Path(tmpdir) / "test.mp3"
+            image_path.touch()
+            audio_path.touch()
 
-        mock_select.return_value.ask_async = AsyncMock(
-            return_value="✅ Approve this card"
-        )
+            card = WordCard(
+                word="test",
+                ipa="test",
+                part_of_speech="noun",
+                image_path=image_path,
+                audio_path=audio_path,
+            )
 
-        await review_card(session, card)
+            mock_select.return_value.ask_async = AsyncMock(
+                return_value="✅ Approve this card"
+            )
 
-        assert card.is_complete is True
+            await review_card(session, card)
+
+            assert card.is_complete is True
 
     @pytest.mark.asyncio
     @patch("review.handle_image_regeneration")
@@ -390,6 +403,7 @@ class TestShowSessionSummary:
                 selected_sentence="Ella habla español",
                 selected_word_form="habla",
                 selected_tense="presente",
+                selected_subject="ella",
             )
             cloze_card.mark_complete()
 

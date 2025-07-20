@@ -360,6 +360,7 @@ def test_cloze_export_verb_with_user_definitions(cloze_config, tmp_path):
         selected_sentence="Yo hablo español.",
         selected_word_form="hablo",
         selected_tense="presente",
+        selected_subject="yo",
         image_path="hablar-test123.jpg",
         audio_path="hablar-test123.mp3",
         memory_aid="To speak, think of someone talking",
@@ -392,7 +393,7 @@ def test_cloze_export_verb_with_user_definitions(cloze_config, tmp_path):
         row = next(reader)
 
     # Check Field 3 has user definition + verb info
-    assert row[2] == "To speak, think of someone talking - intransitive, presente"
+    assert row[2] == "To speak, think of someone talking - intransitive, yo, presente"
 
 
 def test_cloze_export_verb_without_user_definitions(cloze_config, tmp_path):
@@ -420,6 +421,7 @@ def test_cloze_export_verb_without_user_definitions(cloze_config, tmp_path):
         selected_sentence="Ella come manzanas.",
         selected_word_form="come",
         selected_tense="presente",
+        selected_subject="ella",
         image_path="comer-test456.jpg",
         audio_path="comer-test456.mp3",
         memory_aid=None,  # No user definitions
@@ -452,7 +454,7 @@ def test_cloze_export_verb_without_user_definitions(cloze_config, tmp_path):
         row = next(reader)
 
     # Check Field 3 has only verb info (no user definition)
-    assert row[2] == "transitive, presente"
+    assert row[2] == "transitive, ella, presente"
 
 
 def test_cloze_export_non_verb_no_tense_info(cloze_config, tmp_path):

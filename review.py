@@ -45,8 +45,13 @@ async def review_session(session: Session, auto_approve: bool = False) -> None:
             display_word = card.word
             if isinstance(card, ClozeCard) and card.selected_word_form:
                 display_parts = [f"{card.selected_word_form} ({card.word})"]
+                context_parts = []
+                if card.selected_subject:
+                    context_parts.append(card.selected_subject)
                 if card.selected_tense:
-                    display_parts.append(f"[{card.selected_tense}]")
+                    context_parts.append(card.selected_tense)
+                if context_parts:
+                    display_parts.append(f"[{', '.join(context_parts)}]")
                 display_word = " ".join(display_parts)
             choice_text = f"{card_type_indicator} {display_word} - {card.ipa} ({card.part_of_speech})"
             card_choices.append(choice_text)
@@ -70,7 +75,9 @@ async def review_session(session: Session, auto_approve: bool = False) -> None:
                 # Use the first selected sentence for this card
                 selected_card.selected_sentence = selected_sentences[0][0]
                 selected_card.selected_word_form = selected_sentences[0][1]
-                selected_card.selected_tense = selected_sentences[0][2]
+                selected_card.selected_word_ipa = selected_sentences[0][2]
+                selected_card.selected_tense = selected_sentences[0][3]
+                selected_card.selected_subject = selected_sentences[0][4]
 
         # Review the selected card
         await review_card(session, selected_card)
@@ -80,10 +87,10 @@ async def review_session(session: Session, auto_approve: bool = False) -> None:
 
 async def select_sentences_for_cloze_card(
     card: ClozeCard,
-) -> list[tuple[str, str, str, str | None]]:
+) -> list[tuple[str, str, str, str | None, str | None]]:
     """Let user select one or more sentences from the example sentences for Cloze cards.
 
-    Returns a list of tuples (sentence, word_form, ipa, tense) for each selected sentence.
+    Returns a list of tuples (sentence, word_form, ipa, tense, subject) for each selected sentence.
     """
     logger.info(
         "Starting sentence selection",
@@ -101,12 +108,15 @@ async def select_sentences_for_cloze_card(
         word_form = sentence_data["word_form"]
         ipa = sentence_data.get("ipa", "")
         tense = sentence_data.get("tense")
+        subject = sentence_data.get("subject")
 
-        # Build the display text with tense information
+        # Build the display text with tense and subject information
         display_parts = [f"{i}. {sentence_text}"]
         info_parts = [f"uses: {word_form}"]
         if ipa:
             info_parts.append(f"IPA: {ipa}")
+        if subject:
+            info_parts.append(f"subject: {subject}")
         if tense:
             info_parts.append(f"tense: {tense}")
         display_parts.append(f"({', '.join(info_parts)})")
@@ -139,9 +149,10 @@ async def select_sentences_for_cloze_card(
     for index in selected_indices:
         sentence_data = card.example_sentences[index]
         tense = sentence_data.get("tense")
+        subject = sentence_data.get("subject")
         ipa = sentence_data.get("ipa", "")
         selected_sentences.append(
-            (sentence_data["sentence"], sentence_data["word_form"], ipa, tense)
+            (sentence_data["sentence"], sentence_data["word_form"], ipa, tense, subject)
         )
 
         logger.info(
@@ -150,12 +161,15 @@ async def select_sentences_for_cloze_card(
             selected_sentence=sentence_data["sentence"],
             word_form=sentence_data["word_form"],
             tense=tense,
+            subject=subject,
             index=index + 1,
         )
 
     print(f"\n✅ Selected {len(selected_sentences)} sentence(s):")
-    for sentence, word_form, ipa, tense in selected_sentences:
+    for sentence, word_form, ipa, tense, subject in selected_sentences:
         info_parts = [f"uses: {word_form}"]
+        if subject:
+            info_parts.append(f"subject: {subject}")
         if tense:
             info_parts.append(f"tense: {tense}")
         print(f"   • {sentence} ({', '.join(info_parts)})")
@@ -199,6 +213,8 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
             print(f"Definitions: {card.definitions}")
         if card.selected_sentence:
             print(f"Selected sentence: {card.selected_sentence}")
+            if card.selected_subject:
+                print(f"Subject: {card.selected_subject}")
             if card.selected_tense:
                 print(f"Tense: {card.selected_tense}")
         else:
@@ -263,6 +279,7 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
                     card.selected_word_form = selected_sentences[0][1]
                     card.selected_word_ipa = selected_sentences[0][2]
                     card.selected_tense = selected_sentences[0][3]
+                    card.selected_subject = selected_sentences[0][4]
         elif action.startswith("🖼️"):
             await handle_image_regeneration(session, card)
         elif action.startswith("🔊"):

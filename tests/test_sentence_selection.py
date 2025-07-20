@@ -25,18 +25,21 @@ class TestSelectSentencesForClozeCard:
                     "word_form": "hablo",
                     "ipa": "ˈa.βlo",
                     "tense": "presente",
+                    "subject": "yo",
                 },
                 {
                     "sentence": "Tú hablas muy bien",
                     "word_form": "hablas",
                     "ipa": "ˈa.βlas",
                     "tense": "presente",
+                    "subject": "tú",
                 },
                 {
                     "sentence": "Ella habla con su madre",
                     "word_form": "habla",
                     "ipa": "ˈa.βla",
                     "tense": "presente",
+                    "subject": "ella",
                 },
             ],
         }
@@ -59,8 +62,14 @@ class TestSelectSentencesForClozeCard:
 
         # Verify the result
         assert len(result) == 2
-        assert result[0] == ("Yo hablo español", "hablo", "ˈa.βlo", "presente")
-        assert result[1] == ("Ella habla con su madre", "habla", "ˈa.βla", "presente")
+        assert result[0] == ("Yo hablo español", "hablo", "ˈa.βlo", "presente", "yo")
+        assert result[1] == (
+            "Ella habla con su madre",
+            "habla",
+            "ˈa.βla",
+            "presente",
+            "ella",
+        )
 
     @pytest.mark.asyncio
     async def test_select_single_sentence(self):
@@ -71,11 +80,19 @@ class TestSelectSentencesForClozeCard:
             "gender": "feminine",
             "verb_type": None,
             "example_sentences": [
-                {"sentence": "La casa es grande", "word_form": "casa", "ipa": "ˈka.sa"},
+                {
+                    "sentence": "La casa es grande",
+                    "word_form": "casa",
+                    "ipa": "ˈka.sa",
+                    "tense": None,
+                    "subject": None,
+                },
                 {
                     "sentence": "Mi casa tiene jardín",
                     "word_form": "casa",
                     "ipa": "ˈka.sa",
+                    "tense": None,
+                    "subject": None,
                 },
             ],
         }
@@ -94,7 +111,7 @@ class TestSelectSentencesForClozeCard:
             result = await select_sentences_for_cloze_card(card)
 
         assert len(result) == 1
-        assert result[0] == ("Mi casa tiene jardín", "casa", "ˈka.sa", None)
+        assert result[0] == ("Mi casa tiene jardín", "casa", "ˈka.sa", None, None)
 
     @pytest.mark.asyncio
     async def test_no_selection_prompts_single_select(self):
@@ -110,12 +127,14 @@ class TestSelectSentencesForClozeCard:
                     "word_form": "comer",
                     "ipa": "koˈmeɾ",
                     "tense": "infinitivo",
+                    "subject": None,
                 },
                 {
                     "sentence": "Él come mucho",
                     "word_form": "come",
                     "ipa": "ˈko.me",
                     "tense": "presente",
+                    "subject": "él",
                 },
             ],
         }
@@ -144,7 +163,7 @@ class TestSelectSentencesForClozeCard:
             result = await select_sentences_for_cloze_card(card)
 
         assert len(result) == 1
-        assert result[0] == ("Él come mucho", "come", "ˈko.me", "presente")
+        assert result[0] == ("Él come mucho", "come", "ˈko.me", "presente", "él")
 
     @pytest.mark.asyncio
     async def test_create_duplicate_with_sentence(self):
@@ -169,7 +188,7 @@ class TestSelectSentencesForClozeCard:
 
         # Create duplicate with different sentence
         duplicate = original_card.create_duplicate_with_sentence(
-            "Tú hablas muy bien", "hablas", "ˈa.βlas", "presente"
+            "Tú hablas muy bien", "hablas", "ˈa.βlas", "presente", "tú"
         )
 
         # Verify duplicate has same base data
@@ -184,6 +203,7 @@ class TestSelectSentencesForClozeCard:
         assert duplicate.selected_word_form == "hablas"
         assert duplicate.selected_word_ipa == "ˈa.βlas"
         assert duplicate.selected_tense == "presente"
+        assert duplicate.selected_subject == "tú"
         assert duplicate.guid != original_card.guid
 
         # Verify duplicate has no media paths and is not complete

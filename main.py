@@ -152,6 +152,7 @@ async def main():
                                     "ipa", first_sentence.get("word_ipa", "")
                                 ),
                                 first_sentence.get("tense", ""),
+                                first_sentence.get("subject", ""),
                             )
                         ]
                     else:
@@ -160,7 +161,7 @@ async def main():
                     selected_sentences = await select_sentences_for_cloze_card(card)
 
                 # Create cards for each selected sentence
-                for i, (sentence, word_form, ipa, tense) in enumerate(
+                for i, (sentence, word_form, ipa, tense, subject) in enumerate(
                     selected_sentences
                 ):
                     if i == 0:
@@ -169,11 +170,12 @@ async def main():
                         card.selected_word_form = word_form
                         card.selected_word_ipa = ipa
                         card.selected_tense = tense
+                        card.selected_subject = subject
                         session.add_card(card)
                     else:
                         # Create duplicate cards for additional sentences
                         new_card = card.create_duplicate_with_sentence(
-                            sentence, word_form, ipa, tense
+                            sentence, word_form, ipa, tense, subject
                         )
                         session.add_card(new_card)
                         logger.info(

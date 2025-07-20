@@ -40,7 +40,8 @@ Additionally, provide exactly 15 example sentences that demonstrate the word '{w
 - CRITICAL: For each sentence, the "word_form" field must contain the EXACT form of the word that appears in the sentence text. The sentence text must contain this exact word_form identically - character for character, case for case.
 - For each sentence, include the "ipa" field with the IPA pronunciation of the specific word_form used in that sentence (NOT the base word's IPA)
 - For verbs, include the "tense" field with the grammatical tense in Spanish (e.g., "presente", "pretérito", "imperfecto", "futuro", "condicional", "presente de subjuntivo", "imperativo", etc.)
-- For non-verbs, the "tense" field should be null
+- For verbs, include the "subject" field with the grammatical subject in Spanish (e.g., "yo", "tú", "él", "ella", "usted", "nosotros", "nosotras", "vosotros", "vosotras", "ellos", "ellas", "ustedes")
+- For non-verbs, both "tense" and "subject" fields should be null
 
 Return ONLY valid JSON with this structure (no markdown formatting, no code blocks):
 {{
@@ -49,8 +50,8 @@ Return ONLY valid JSON with this structure (no markdown formatting, no code bloc
   "gender": "string or null",
   "verb_type": "string or null",
   "example_sentences": [
-    {{"sentence": "sentence text", "word_form": "exact conjugated form in sentence", "ipa": "IPA of word_form", "tense": "tense name or null"}},
-    {{"sentence": "sentence text", "word_form": "exact conjugated form in sentence", "ipa": "IPA of word_form", "tense": "tense name or null"}}
+    {{"sentence": "sentence text", "word_form": "exact conjugated form in sentence", "ipa": "IPA of word_form", "tense": "tense name or null", "subject": "subject or null"}},
+    {{"sentence": "sentence text", "word_form": "exact conjugated form in sentence", "ipa": "IPA of word_form", "tense": "tense name or null", "subject": "subject or null"}}
   ]
 }}
 """
@@ -61,6 +62,7 @@ class ExampleSentence(TypedDict):
     word_form: str
     ipa: str
     tense: str | None
+    subject: str | None
 
 
 class WordAnalysis(TypedDict):
