@@ -54,7 +54,11 @@ def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
     # Add verb type, subject, and tense for verbs
     verb_info_parts = []
     if card.verb_type:
-        verb_info_parts.append(card.verb_type)
+        # Include base verb in parentheses if show_base_verb is True
+        if card.show_base_verb:
+            verb_info_parts.append(f"{card.verb_type} ({card.word})")
+        else:
+            verb_info_parts.append(card.verb_type)
     if card.selected_subject:
         verb_info_parts.append(card.selected_subject)
     if card.selected_tense:

@@ -457,6 +457,70 @@ def test_cloze_export_verb_without_user_definitions(cloze_config, tmp_path):
     assert row[2] == "transitive, ella, presente"
 
 
+def test_cloze_export_verb_with_show_base_verb(cloze_config, tmp_path):
+    """Test export of verb cloze card with show_base_verb enabled."""
+    cloze_config.anki_media_path = tmp_path / "collection_media"
+    cloze_config.anki_media_path.mkdir(parents=True)
+
+    # Create a verb card with show_base_verb enabled
+    card = ClozeCard(
+        word="escribir",
+        guid=str(uuid.uuid4()),
+        word_analysis={
+            "ipa": "es.kɾi.ˈβiɾ",
+            "part_of_speech": "verbo",
+            "gender": None,
+            "verb_type": "regular",
+            "example_sentences": [
+                {
+                    "sentence": "Yo escribo cartas.",
+                    "word_form": "escribo",
+                    "tense": "presente",
+                }
+            ],
+        },
+        selected_sentence="Yo escribo cartas.",
+        selected_word_form="escribo",
+        selected_tense="presente",
+        selected_subject="yo",
+        image_path="escribir-test789.jpg",
+        audio_path="escribir-test789.mp3",
+        memory_aid="To write, think of pen and paper",
+        show_base_verb=True,  # Enable showing base verb
+    )
+    card.mark_complete()
+
+    # Create mock media files
+    image_path = tmp_path / card.image_path
+    audio_path = tmp_path / card.audio_path
+    image_path.write_text("fake image")
+    audio_path.write_text("fake audio")
+
+    session = Session(
+        vocabulary_cards=[],
+        cloze_cards=[card],
+        output_directory=tmp_path,
+    )
+
+    with patch("cloze_export.copy_cloze_media_files") as mock_copy:
+        mock_copy.return_value = {"escribir_image": True, "escribir_audio": True}
+        export_cloze_cards_to_anki(session, cloze_config)
+
+    csv_path = tmp_path / "anki_import_cloze.csv"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        # Skip headers
+        for line in f:
+            if line.startswith("#fields:"):
+                break
+        reader = csv.reader(f, delimiter="\t")
+        row = next(reader)
+
+    # Check Field 3 includes base verb in parentheses when show_base_verb is True
+    assert (
+        row[2] == "To write, think of pen and paper - regular (escribir), yo, presente"
+    )
+
+
 def test_cloze_export_non_verb_no_tense_info(cloze_config, tmp_path):
     """Test export of non-verb cloze card shows no verb tense info."""
     cloze_config.anki_media_path = tmp_path / "collection_media"

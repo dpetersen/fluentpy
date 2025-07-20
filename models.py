@@ -82,6 +82,7 @@ class ClozeCard:
     is_complete: bool = False
     guid: str = field(default_factory=lambda: str(uuid.uuid4()))
     card_type: str = "cloze"
+    show_base_verb: bool = False
 
     def mark_complete(self) -> None:
         """Mark this card as complete when user approves all media."""
@@ -158,6 +159,7 @@ class ClozeCard:
             audio_path=None,
             is_complete=False,
             card_type=self.card_type,
+            show_base_verb=self.show_base_verb,
         )
 
 

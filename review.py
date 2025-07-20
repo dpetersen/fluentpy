@@ -44,7 +44,11 @@ async def review_session(session: Session, auto_approve: bool = False) -> None:
             # For Cloze cards with selected sentences, show the word form instead of base word
             display_word = card.word
             if isinstance(card, ClozeCard) and card.selected_word_form:
-                display_parts = [f"{card.selected_word_form} ({card.word})"]
+                # Show base verb in parentheses if enabled for verb cards
+                if card.show_base_verb and card.verb_type:
+                    display_parts = [f"{card.selected_word_form} ({card.word})"]
+                else:
+                    display_parts = [card.selected_word_form]
                 context_parts = []
                 if card.selected_subject:
                     context_parts.append(card.selected_subject)
@@ -178,18 +182,18 @@ async def select_sentences_for_cloze_card(
     return selected_sentences
 
 
-async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> None:
-    """Review a single card and allow user to approve or regenerate media."""
-    logger.info("Reviewing card", word=card.word, card_type=card.card_type)
-
-    # Display card information
+def display_card_info(card: Union[WordCard, ClozeCard]) -> None:
+    """Display card information header."""
     print(f"\n{'=' * 60}")
     card_type_icon = "🧩" if isinstance(card, ClozeCard) else "📚"
 
     # For Cloze cards, show the word form if available
     display_word = card.word
     if isinstance(card, ClozeCard) and card.selected_word_form:
-        display_word = f"{card.selected_word_form} (from {card.word})"
+        if card.show_base_verb and card.verb_type:
+            display_word = f"{card.selected_word_form} ({card.word})"
+        else:
+            display_word = f"{card.selected_word_form} (from {card.word})"
 
     print(f"{card_type_icon} {card.card_type.title()} Card: {display_word}")
     # For Cloze cards with selected word form, show the conjugated IPA
@@ -222,6 +226,14 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
 
     print(f"{'=' * 60}")
 
+
+async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> None:
+    """Review a single card and allow user to approve or regenerate media."""
+    logger.info("Reviewing card", word=card.word, card_type=card.card_type)
+
+    # Display card information
+    display_card_info(card)
+
     # Display generated media
     await display_card_media(card)
 
@@ -232,6 +244,15 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
         # Add sentence reselection for Cloze cards
         if isinstance(card, ClozeCard):
             actions.append("🔄 Change selected sentence")
+
+            # Add base verb toggle for verb cards
+            if card.verb_type:
+                toggle_text = (
+                    "👁️  Base verb: shown"
+                    if card.show_base_verb
+                    else "👁️  Base verb: hidden"
+                )
+                actions.append(toggle_text)
 
         # Always show regenerate image option - allows fixing failed generations
         actions.append("🖼️  Regenerate image")
@@ -286,6 +307,18 @@ async def review_card(session: Session, card: Union[WordCard, ClozeCard]) -> Non
             await handle_audio_regeneration(session, card)
         elif action.startswith("🔈"):
             await handle_audio_replay(card)
+        elif action.startswith("👁️"):
+            # Toggle base verb display for cloze cards
+            if isinstance(card, ClozeCard) and card.verb_type:
+                card.show_base_verb = not card.show_base_verb
+                logger.info(
+                    "Toggled base verb display",
+                    word=card.word,
+                    show_base_verb=card.show_base_verb,
+                )
+                # Redisplay the card information with the new state
+                display_card_info(card)
+                await display_card_media(card)
 
 
 async def display_card_media(card: Union[WordCard, ClozeCard]) -> None:

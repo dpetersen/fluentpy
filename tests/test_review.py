@@ -285,8 +285,14 @@ class TestReviewCard:
             session = Session()
             image_path = Path(tmpdir) / "test.jpg"
             image_path.touch()
+            audio_path = Path(tmpdir) / "test.mp3"
+            audio_path.touch()
             card = WordCard(
-                word="test", ipa="test", part_of_speech="noun", image_path=image_path
+                word="test",
+                ipa="test",
+                part_of_speech="noun",
+                image_path=image_path,
+                audio_path=audio_path,
             )
 
             # First call regenerate, then approve
@@ -311,10 +317,16 @@ class TestReviewCard:
         """Test that audio regeneration option calls handler."""
         with tempfile.TemporaryDirectory() as tmpdir:
             session = Session()
+            image_path = Path(tmpdir) / "test.jpg"
+            image_path.touch()
             audio_path = Path(tmpdir) / "test.mp3"
             audio_path.touch()
             card = WordCard(
-                word="test", ipa="test", part_of_speech="noun", audio_path=audio_path
+                word="test",
+                ipa="test",
+                part_of_speech="noun",
+                image_path=image_path,
+                audio_path=audio_path,
             )
 
             # First call regenerate, then approve
@@ -337,10 +349,16 @@ class TestReviewCard:
         """Test that audio replay option calls handler."""
         with tempfile.TemporaryDirectory() as tmpdir:
             session = Session()
+            image_path = Path(tmpdir) / "test.jpg"
+            image_path.touch()
             audio_path = Path(tmpdir) / "test.mp3"
             audio_path.touch()
             card = WordCard(
-                word="test", ipa="test", part_of_speech="noun", audio_path=audio_path
+                word="test",
+                ipa="test",
+                part_of_speech="noun",
+                image_path=image_path,
+                audio_path=audio_path,
             )
 
             # First call replay, then approve

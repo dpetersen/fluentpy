@@ -351,3 +351,71 @@ class TestClozeCard:
 
         assert len(card.short_id) == 8
         assert card.short_id == card.guid[:8]
+
+    def test_show_base_verb_default(self):
+        """Test that show_base_verb defaults to False."""
+        word_analysis = {
+            "ipa": "a.ˈblaɾ",
+            "part_of_speech": "verbo",
+            "verb_type": "regular",
+            "example_sentences": [
+                {
+                    "sentence": "Yo hablo español.",
+                    "word_form": "hablo",
+                    "tense": "presente",
+                }
+            ],
+        }
+
+        card = ClozeCard(
+            word="hablar",
+            word_analysis=word_analysis,
+            selected_sentence="Yo hablo español.",
+            selected_word_form="hablo",
+        )
+
+        assert card.show_base_verb is False
+
+    def test_create_duplicate_preserves_show_base_verb(self):
+        """Test that create_duplicate_with_sentence preserves show_base_verb state."""
+        word_analysis = {
+            "ipa": "ko.ˈmeɾ",
+            "part_of_speech": "verbo",
+            "verb_type": "regular",
+            "example_sentences": [
+                {
+                    "sentence": "Yo como manzanas.",
+                    "word_form": "como",
+                    "tense": "presente",
+                },
+                {
+                    "sentence": "Ella comió pizza.",
+                    "word_form": "comió",
+                    "tense": "pretérito",
+                },
+            ],
+        }
+
+        original_card = ClozeCard(
+            word="comer",
+            word_analysis=word_analysis,
+            selected_sentence="Yo como manzanas.",
+            selected_word_form="como",
+            show_base_verb=True,
+        )
+
+        # Create duplicate with different sentence
+        duplicate = original_card.create_duplicate_with_sentence(
+            sentence="Ella comió pizza.",
+            word_form="comió",
+            word_ipa="ko.ˈmjo",
+            tense="pretérito",
+            subject="ella",
+        )
+
+        # The duplicate should preserve the show_base_verb state
+        assert duplicate.show_base_verb is True
+        assert duplicate.word == original_card.word
+        assert duplicate.selected_sentence == "Ella comió pizza."
+        assert duplicate.selected_word_form == "comió"
+        assert duplicate.guid != original_card.guid
