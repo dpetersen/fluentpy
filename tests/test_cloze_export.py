@@ -141,6 +141,10 @@ def test_export_cloze_cards_csv_headers(
         "Back (a single word/phrase, no context)",
         "- The full sentence (no words blanked out)",
         "- Extra Info (Pronunciation, personal connections, conjugations, etc)",
+        "",  # Field 7 - empty
+        "",  # Field 8 - empty
+        "",  # Field 9 - empty
+        "Mnemonic Priming Image",  # Field 10
     ]
     expected_header = "#fields:" + "\t".join(expected_fields)
     assert fields_line == expected_header

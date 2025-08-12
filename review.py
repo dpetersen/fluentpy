@@ -1,13 +1,20 @@
 import subprocess
+import shutil
 from pathlib import Path
 
 import questionary
 from loguru import logger
+from openai import AsyncOpenAI
 
 from images import view_image
-from models import Session, WordCard, ClozeCard
+from models import Session, WordCard, ClozeCard, WordInput, ClozeCardInput
 from typing import Union
 from session import regenerate_audio, regenerate_image
+from mnemonic_images import (
+    generate_mnemonic_image,
+    get_mnemonic_filename,
+    check_mnemonic_exists,
+)
 
 
 async def review_session(session: Session, auto_approve: bool = False) -> None:
@@ -486,3 +493,154 @@ def show_session_summary(session: Session) -> None:
     print(f"\nAll media files are saved in: {session.output_directory}")
     print("Ready for Anki export!")
     print(f"{'=' * 60}")
+
+
+async def review_mnemonic_images(
+    word_inputs: list[Union[WordInput, ClozeCardInput]],
+    anki_media_path: Path,
+    client: AsyncOpenAI,
+) -> set[str]:
+    """Review and generate mnemonic priming images.
+
+    Returns a set of words that have mnemonic images (either existing or newly generated).
+    """
+    logger.info("Starting mnemonic image review")
+    words_with_mnemonic: set[str] = set()
+
+    # First, collect all words that need mnemonic generation or already have one
+    words_needing_generation: list[tuple[str, str]] = []  # (word, description)
+
+    for word_input in word_inputs:
+        word = word_input.word
+
+        # Check if mnemonic already exists
+        if check_mnemonic_exists(word, anki_media_path):
+            if word_input.mnemonic_image_description:
+                # User wants to replace existing
+                words_needing_generation.append(
+                    (word, word_input.mnemonic_image_description)
+                )
+            else:
+                # Keep existing
+                words_with_mnemonic.add(word)
+                logger.info(f"Using existing mnemonic image for '{word}'")
+        elif word_input.mnemonic_image_description:
+            # New mnemonic requested
+            words_needing_generation.append(
+                (word, word_input.mnemonic_image_description)
+            )
+
+    if not words_needing_generation:
+        logger.info("No mnemonic images to generate or review")
+        return words_with_mnemonic
+
+    print("\n=== Mnemonic Image Review ===")
+    print(f"Generating mnemonic images for {len(words_needing_generation)} words...\n")
+
+    # Review each mnemonic image
+    for i, (word, description) in enumerate(words_needing_generation, 1):
+        print(f"[{i}/{len(words_needing_generation)}] Generating mnemonic for: {word}")
+        print(f'Description: "{description}"')
+
+        # Generate to temp location first
+        temp_path = anki_media_path.parent / f"temp_mpi_{word}.jpg"
+
+        try:
+            await generate_mnemonic_image(
+                client=client,
+                word=word,
+                description=description,
+                output_path=temp_path,
+            )
+
+            # Display the image
+            view_image(str(temp_path))
+
+            # Get user approval
+            choices = [
+                "Approve",
+                "Regenerate with additional context",
+                "Skip (no mnemonic image)",
+            ]
+            action = await questionary.select(
+                "Choose action:",
+                choices=choices,
+            ).ask_async()
+
+            if action == "Approve":
+                # Copy to final location
+                final_path = anki_media_path / get_mnemonic_filename(word)
+                shutil.copy2(temp_path, final_path)
+                words_with_mnemonic.add(word)
+                logger.info(
+                    f"✓ Mnemonic image saved to Anki: {get_mnemonic_filename(word)}"
+                )
+                print(
+                    f"✓ Mnemonic image saved to Anki: {get_mnemonic_filename(word)}\n"
+                )
+
+            elif action == "Regenerate with additional context":
+                # Allow regeneration with additional context
+                while True:
+                    additional_context = await questionary.text(
+                        "Additional context:",
+                        validate=lambda text: bool(text.strip()),
+                    ).ask_async()
+
+                    full_description = f"{description}. {additional_context}"
+                    print("🔄 Regenerating...")
+
+                    # Regenerate
+                    await generate_mnemonic_image(
+                        client=client,
+                        word=word,
+                        description=full_description,
+                        output_path=temp_path,
+                    )
+
+                    # Display again
+                    view_image(str(temp_path))
+
+                    # Ask again
+                    action = await questionary.select(
+                        "Choose action:",
+                        choices=[
+                            "Approve",
+                            "Regenerate with additional context",
+                            "Skip (no mnemonic image)",
+                        ],
+                    ).ask_async()
+
+                    if action == "Approve":
+                        final_path = anki_media_path / get_mnemonic_filename(word)
+                        shutil.copy2(temp_path, final_path)
+                        words_with_mnemonic.add(word)
+                        logger.info(
+                            f"✓ Mnemonic image saved to Anki: {get_mnemonic_filename(word)}"
+                        )
+                        print(
+                            f"✓ Mnemonic image saved to Anki: {get_mnemonic_filename(word)}\n"
+                        )
+                        break
+                    elif action == "Skip (no mnemonic image)":
+                        logger.info(f"Skipped mnemonic image for '{word}'")
+                        print(f"❌ Skipped mnemonic image for '{word}'\n")
+                        break
+                    # Otherwise loop continues for another regeneration
+
+            else:  # Skip
+                logger.info(f"Skipped mnemonic image for '{word}'")
+                print(f"❌ Skipped mnemonic image for '{word}'\n")
+
+        except Exception as e:
+            logger.error(f"Failed to generate mnemonic for '{word}': {e}")
+            print(f"❌ Error generating mnemonic for '{word}': {e}\n")
+        finally:
+            # Clean up temp file
+            if temp_path.exists():
+                temp_path.unlink()
+
+    print("Mnemonic image review complete!")
+    print(f"{len(words_with_mnemonic)} words have mnemonic images\n")
+
+    return words_with_mnemonic

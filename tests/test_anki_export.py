@@ -91,6 +91,7 @@ class TestCreateCsvRow:
             "[sound:gato-test-gui.mp3] ˈga.to",
             "",
             "test-guid-1234",
+            "",  # No mnemonic image
         ]
         assert result == expected
 
@@ -114,6 +115,7 @@ class TestCreateCsvRow:
             "pa.ˈla.βra",
             "",
             "test-guid-5678",
+            "",  # No mnemonic image
         ]
         assert result == expected
 

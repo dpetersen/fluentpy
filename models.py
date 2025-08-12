@@ -13,6 +13,7 @@ class WordInput:
     word: str
     personal_context: str | None = None
     extra_image_prompt: str | None = None
+    mnemonic_image_description: str | None = None
 
 
 @dataclass
@@ -24,6 +25,7 @@ class ClozeCardInput:
     extra_image_prompt: str | None = None
     definitions: str | None = None
     card_type: str = "cloze"
+    mnemonic_image_description: str | None = None
 
 
 @dataclass
@@ -42,6 +44,7 @@ class WordCard:
     is_complete: bool = False
     guid: str = field(default_factory=lambda: str(uuid.uuid4()))
     card_type: str = "vocabulary"
+    has_mnemonic_image: bool = False
 
     def mark_complete(self) -> None:
         """Mark this card as complete when user approves all media."""
@@ -83,6 +86,7 @@ class ClozeCard:
     guid: str = field(default_factory=lambda: str(uuid.uuid4()))
     card_type: str = "cloze"
     show_base_verb: bool = False
+    has_mnemonic_image: bool = False
 
     def mark_complete(self) -> None:
         """Mark this card as complete when user approves all media."""
@@ -160,6 +164,7 @@ class ClozeCard:
             is_complete=False,
             card_type=self.card_type,
             show_base_verb=self.show_base_verb,
+            has_mnemonic_image=self.has_mnemonic_image,
         )
 
 

@@ -9,14 +9,20 @@ from loguru import logger
 
 from anki_export import export_to_anki
 from cloze_export import export_cloze_cards_to_anki
-from config import AnkiConfig, ClozeAnkiConfig
-from review import review_session, show_session_summary, select_sentences_for_cloze_card
+from config import AnkiConfig, ClozeAnkiConfig, find_anki_collection_media
+from review import (
+    review_session,
+    show_session_summary,
+    select_sentences_for_cloze_card,
+    review_mnemonic_images,
+)
 from session import create_session, generate_media_for_session
 from word_input import (
     get_all_word_inputs,
     get_words_from_list,
     get_cloze_words_from_list,
 )
+from openai import AsyncOpenAI
 
 # Configure loguru to show extra fields
 logger.remove()  # Remove default handler
@@ -111,10 +117,33 @@ async def main():
     print(f"   📚 Vocabulary cards: {len(vocabulary_inputs)}")
     print(f"   🧩 Cloze cards: {len(cloze_inputs)}")
 
-    # Step 2: Create session and analyze words
+    # Step 2: Review mnemonic images before creating session
+    anki_media_path = find_anki_collection_media()
+    words_with_mnemonic = set()
+
+    if anki_media_path:
+        # Combine all word inputs for mnemonic review
+        all_word_inputs = list(vocabulary_inputs) + list(cloze_inputs)
+
+        # Review mnemonic images
+        openai_client = AsyncOpenAI()
+        words_with_mnemonic = await review_mnemonic_images(
+            word_inputs=all_word_inputs,
+            anki_media_path=anki_media_path,
+            client=openai_client,
+        )
+    else:
+        logger.warning("Anki media path not found, skipping mnemonic image feature")
+        print(
+            "⚠️ Warning: Anki media folder not found, mnemonic images will not be available"
+        )
+
+    # Step 3: Create session and analyze words
     try:
         session = await create_session(
-            vocabulary_inputs=vocabulary_inputs, cloze_inputs=cloze_inputs
+            vocabulary_inputs=vocabulary_inputs,
+            cloze_inputs=cloze_inputs,
+            words_with_mnemonic=words_with_mnemonic,
         )
         logger.info("Session created", total_cards=len(session.cards))
     except Exception as e:
@@ -122,7 +151,7 @@ async def main():
         print(f"❌ Error analyzing words: {e}")
         return
 
-    # Step 2.5: Select sentences for Cloze cards before media generation
+    # Step 4: Select sentences for Cloze cards before media generation
     cloze_cards = session.cloze_cards.copy()  # Copy the list as we'll be modifying it
     if cloze_cards:
         print(f"\n🧩 Selecting sentences for {len(cloze_cards)} Cloze word(s)...")
@@ -198,7 +227,7 @@ async def main():
             print(f"❌ Error selecting sentences: {e}")
             return
 
-    # Step 3: Generate media for all cards
+    # Step 5: Generate media for all cards
     print("\n🎨 Generating images and audio...")
     try:
         await generate_media_for_session(session)
@@ -208,7 +237,7 @@ async def main():
         print(f"❌ Error generating media: {e}")
         return
 
-    # Step 4: Review and approve cards
+    # Step 6: Review and approve cards
     print("\n👀 Review your flashcards")
     print("For each word, you can approve the generated media or regenerate it.")
     print()
@@ -221,10 +250,10 @@ async def main():
         print(f"❌ Error during review: {e}")
         return
 
-    # Step 5: Show session summary
+    # Step 7: Show session summary
     show_session_summary(session)
 
-    # Step 6: Export to Anki
+    # Step 8: Export to Anki
     vocabulary_cards = session.vocabulary_cards
     cloze_cards = session.cloze_cards
 

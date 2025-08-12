@@ -19,6 +19,7 @@ async def create_session(
     vocabulary_inputs: list[WordInput] | None = None,
     cloze_inputs: list[ClozeCardInput] | None = None,
     output_directory: Path | None = None,
+    words_with_mnemonic: set[str] | None = None,
 ) -> Session:
     """Create a session from vocabulary and/or Cloze word inputs."""
     if output_directory is None:
@@ -29,6 +30,7 @@ async def create_session(
 
     vocabulary_inputs = vocabulary_inputs or []
     cloze_inputs = cloze_inputs or []
+    words_with_mnemonic = words_with_mnemonic or set()
     total_words = len(vocabulary_inputs) + len(cloze_inputs)
 
     logger.info(
@@ -86,6 +88,7 @@ async def create_session(
                 verb_type=analysis.get("verb_type"),
                 personal_context=word_input.personal_context,
                 extra_image_prompt=word_input.extra_image_prompt,
+                has_mnemonic_image=(word_input.word in words_with_mnemonic),
             )
             session.add_card(card)
 
@@ -102,6 +105,7 @@ async def create_session(
                 personal_context=word_input.personal_context,
                 extra_prompt=word_input.extra_image_prompt,
                 memory_aid=word_input.definitions,
+                has_mnemonic_image=(word_input.word in words_with_mnemonic),
             )
             session.add_card(card)
 

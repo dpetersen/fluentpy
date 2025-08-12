@@ -2,11 +2,14 @@ import questionary
 from loguru import logger
 
 from models import WordInput, ClozeCardInput
+from mnemonic_images import check_mnemonic_exists
+from config import find_anki_collection_media
 
 
 async def get_vocabulary_word_inputs() -> list[WordInput]:
     """Interactively collect words and metadata for vocabulary cards."""
     word_inputs: list[WordInput] = []
+    anki_media_path = find_anki_collection_media()
 
     logger.info("Starting vocabulary word input collection")
     print("\n📚 Vocabulary Card Collection")
@@ -44,10 +47,29 @@ async def get_vocabulary_word_inputs() -> list[WordInput]:
             else None
         )
 
+        # Check for existing mnemonic image and prompt for description
+        mnemonic_description = None
+        if anki_media_path and check_mnemonic_exists(word, anki_media_path):
+            print(f"✓ Mnemonic image already exists for '{word}'")
+            mnemonic_input = await questionary.text(
+                "Replace with new mnemonic image description? (press Enter to keep existing):"
+            ).ask_async()
+            mnemonic_description = (
+                mnemonic_input.strip() if mnemonic_input.strip() else None
+            )
+        else:
+            mnemonic_input = await questionary.text(
+                "Mnemonic image description (e.g., 'college dorm room') - press Enter to skip:"
+            ).ask_async()
+            mnemonic_description = (
+                mnemonic_input.strip() if mnemonic_input.strip() else None
+            )
+
         word_input = WordInput(
             word=word,
             personal_context=personal_context,
             extra_image_prompt=extra_image_prompt,
+            mnemonic_image_description=mnemonic_description,
         )
         word_inputs.append(word_input)
 
@@ -65,6 +87,7 @@ async def get_vocabulary_word_inputs() -> list[WordInput]:
 async def get_cloze_word_inputs() -> list[ClozeCardInput]:
     """Interactively collect words and metadata for Cloze cards."""
     word_inputs: list[ClozeCardInput] = []
+    anki_media_path = find_anki_collection_media()
 
     logger.info("Starting Cloze word input collection")
     print("\n🧩 Cloze Card Collection")
@@ -108,11 +131,30 @@ async def get_cloze_word_inputs() -> list[ClozeCardInput]:
             else None
         )
 
+        # Check for existing mnemonic image and prompt for description
+        mnemonic_description = None
+        if anki_media_path and check_mnemonic_exists(word, anki_media_path):
+            print(f"✓ Mnemonic image already exists for '{word}'")
+            mnemonic_input = await questionary.text(
+                "Replace with new mnemonic image description? (press Enter to keep existing):"
+            ).ask_async()
+            mnemonic_description = (
+                mnemonic_input.strip() if mnemonic_input.strip() else None
+            )
+        else:
+            mnemonic_input = await questionary.text(
+                "Mnemonic image description (e.g., 'college dorm room') - press Enter to skip:"
+            ).ask_async()
+            mnemonic_description = (
+                mnemonic_input.strip() if mnemonic_input.strip() else None
+            )
+
         word_input = ClozeCardInput(
             word=word,
             definitions=definitions,
             personal_context=personal_context,
             extra_image_prompt=extra_image_prompt,
+            mnemonic_image_description=mnemonic_description,
         )
         word_inputs.append(word_input)
 

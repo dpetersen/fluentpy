@@ -7,6 +7,7 @@ from loguru import logger
 from config import AnkiConfig
 from models import Session, WordCard, ClozeCard
 from typing import Union
+from mnemonic_images import get_mnemonic_filename
 
 
 def create_field_3_content(card: Union[WordCard, ClozeCard], config: AnkiConfig) -> str:
@@ -69,7 +70,13 @@ def create_csv_row(card: Union[WordCard, ClozeCard], config: AnkiConfig) -> list
     # Field 6: GUID
     guid = card.guid
 
-    return [word, picture, field_3, pronunciation, test_spelling, guid]
+    # Field 7: Mnemonic Priming Image
+    mnemonic_image = ""
+    if card.has_mnemonic_image:
+        mnemonic_filename = get_mnemonic_filename(card.word)
+        mnemonic_image = f'<img src="{mnemonic_filename}">'
+
+    return [word, picture, field_3, pronunciation, test_spelling, guid, mnemonic_image]
 
 
 def copy_media_files(session: Session, config: AnkiConfig) -> dict[str, bool]:

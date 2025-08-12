@@ -7,6 +7,7 @@ from loguru import logger
 
 from config import ClozeAnkiConfig
 from models import ClozeCard, Session
+from mnemonic_images import get_mnemonic_filename
 
 
 def blank_word_in_sentence(sentence: str, target_word: str) -> str:
@@ -90,6 +91,17 @@ def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
         extra_info_parts.append(card.personal_context)
     extra_info = " ".join(extra_info_parts)
 
+    # Fields 7-9: Empty padding fields
+    empty_field_7 = ""
+    empty_field_8 = ""
+    empty_field_9 = ""
+
+    # Field 10: Mnemonic Priming Image
+    mnemonic_image = ""
+    if card.has_mnemonic_image:
+        mnemonic_filename = get_mnemonic_filename(card.word)
+        mnemonic_image = f'<img src="{mnemonic_filename}">'
+
     return [
         front_example,
         front_picture,
@@ -97,6 +109,10 @@ def create_cloze_csv_row(card: ClozeCard, config: ClozeAnkiConfig) -> list[str]:
         back_word,
         full_sentence,
         extra_info,
+        empty_field_7,
+        empty_field_8,
+        empty_field_9,
+        mnemonic_image,
     ]
 
 

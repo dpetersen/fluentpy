@@ -63,6 +63,7 @@ class AnkiConfig:
         "Pronunciation (Recording and/or IPA)",
         "Test Spelling? (y = yes, blank = no)",
         "guid",
+        "Mnemonic Priming Image",
     ]
 
     # Spanish grammar terms
@@ -129,6 +130,10 @@ class ClozeAnkiConfig:
         "Back (a single word/phrase, no context)",
         "- The full sentence (no words blanked out)",
         "- Extra Info (Pronunciation, personal connections, conjugations, etc)",
+        "",  # Field 7 - empty
+        "",  # Field 8 - empty
+        "",  # Field 9 - empty
+        "Mnemonic Priming Image",  # Field 10
     ]
 
     # Spanish grammar terms (same as AnkiConfig)
